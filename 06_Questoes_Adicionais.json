@@ -1,0 +1,652 @@
+[
+    {
+        "id":  "C3-Q11",
+        "context":  "Uma tabela de contatos de teste possui as colunas nome VARCHAR(50), cidade VARCHAR(50) e idade INTEGER, nessa ordem. A aplicação recebeu os dados Ana, Curitiba e 22. O desenvolvedor escreveu INSERT INTO contatos VALUES (\u0027Curitiba\u0027, \u0027Ana\u0027, 22). Não há restrições adicionais.",
+        "q":  "Qual é o efeito esperado dessa inserção?",
+        "a":  [
+                  "A linha é inserida, mas Curitiba fica em nome e Ana em cidade, pois os dois valores são compatíveis com os tipos de destino.",
+                  "A operação falha porque o PostgreSQL identifica que Curitiba é uma cidade, e não um nome de pessoa.",
+                  "A linha é inserida com os campos corrigidos pelo significado dos textos.",
+                  "A operação falha porque INSERT sem lista de colunas não é permitido.",
+                  "A linha é inserida, mas o banco troca automaticamente a ordem das colunas da tabela."
+              ],
+        "explanation":  "Sem lista de colunas, os valores seguem a ordem declarada. O sistema verifica tipos e restrições, não o significado de um nome ou cidade. Como ambos são textos válidos, esse erro pode passar silenciosamente. Prefira INSERT INTO contatos (nome,cidade,idade) VALUES (\u0027Ana\u0027,\u0027Curitiba\u0027,22)."
+    },
+    {
+        "id":  "C3-Q12",
+        "context":  "Em uma base de teste há três contatos: Ana, 22 anos; Bruno, 31; e Carla, 27. Um analista quer localizar apenas Ana e Carla antes de revisar seus cadastros.",
+        "q":  "Qual consulta retorna somente os nomes desses dois contatos com base na idade?",
+        "a":  [
+                  "SELECT nome FROM contatos WHERE idade \u003c 30;",
+                  "SELECT idade FROM contatos WHERE idade \u003c 30;",
+                  "SELECT nome FROM contatos WHERE idade \u003e 30;",
+                  "SELECT nome FROM contatos ORDER BY idade;",
+                  "SELECT nome FROM contatos WHERE idade = 22 AND idade = 27;"
+              ],
+        "explanation":  "SELECT nome escolhe a coluna apresentada; WHERE idade \u003c 30 escolhe as linhas de Ana e Carla. Selecionar idade muda a coluna de saída; ORDER BY apenas ordena; uma única idade não pode ser simultaneamente 22 e 27."
+    },
+    {
+        "id":  "C3-Q13",
+        "context":  "Uma tabela de ensaio tem os registros (id=1, nome=Ana, cidade=Curitiba) e (id=2, nome=Ana, cidade=Santos). Somente o cadastro de id 2 deve mudar de cidade para Recife. O id identifica cada contato de forma única.",
+        "q":  "Qual comando faz a alteração solicitada sem atingir a outra Ana?",
+        "a":  [
+                  "UPDATE contatos SET cidade = \u0027Recife\u0027 WHERE id = 2;",
+                  "UPDATE contatos SET cidade = \u0027Recife\u0027 WHERE nome = \u0027Ana\u0027;",
+                  "UPDATE contatos SET cidade = \u0027Recife\u0027;",
+                  "UPDATE contatos SET nome = \u0027Recife\u0027 WHERE id = 2;",
+                  "UPDATE contatos SET cidade = \u0027Santos\u0027 WHERE id = 2;"
+              ],
+        "explanation":  "O filtro pela chave id=2 identifica exatamente a linha desejada. O filtro pelo nome atingiria as duas pessoas; a ausência de WHERE atingiria todas; alterar nome ou manter Santos não cumpre a solicitação."
+    },
+    {
+        "id":  "C3-Q14",
+        "context":  "Um script de teste contém quatro contatos com idades inteiras não nulas: 17, 18, 19 e 25. A tarefa é remover apenas os menores de idade, preservando quem já completou 18 anos.",
+        "q":  "Qual comando usa corretamente o limite solicitado?",
+        "a":  [
+                  "DELETE FROM contatos WHERE idade \u003c 18;",
+                  "DELETE FROM contatos WHERE idade \u003c= 18;",
+                  "DELETE FROM contatos WHERE idade \u003e 18;",
+                  "DELETE FROM contatos WHERE idade = 18;",
+                  "DELETE FROM contatos WHERE idade \u003c\u003e 18;"
+              ],
+        "explanation":  "Menor de 18 corresponde a idade \u003c 18. O operador \u003c= também excluiria quem tem 18; \u003c\u003e removeria todas as outras idades, inclusive adultos. A diferença entre limites inclusivos e exclusivos é decisiva nas alterações de dados."
+    },
+    {
+        "id":  "C3-Q15",
+        "context":  "Um relatório de ensaio precisa ordenar pessoas da mesma cidade pela idade, mantendo a ordem estável mesmo quando há pessoas da mesma idade. Cada contato tem um id único.",
+        "q":  "Qual ORDER BY garante cidade crescente, idade decrescente e desempate final por id crescente?",
+        "a":  [
+                  "ORDER BY cidade ASC, idade DESC, id ASC",
+                  "ORDER BY idade DESC, cidade ASC, id ASC",
+                  "ORDER BY cidade DESC, idade ASC, id ASC",
+                  "ORDER BY cidade ASC, id ASC, idade DESC",
+                  "ORDER BY cidade ASC, idade DESC"
+              ],
+        "explanation":  "As chaves de ordenação são aplicadas da esquerda para a direita. O id único elimina o empate restante entre cidade e idade. Sem esse último critério, duas pessoas empatadas podem aparecer em qualquer ordem relativa."
+    },
+    {
+        "id":  "C3-Q16",
+        "context":  "Depois de executar DELETE FROM rascunho, um aluno quer reutilizar a tabela vazia para uma nova tentativa. O comando terminou com sucesso, e nenhuma outra operação alterou a estrutura.",
+        "q":  "O que ele pode fazer em seguida?",
+        "a":  [
+                  "Executar INSERT INTO rascunho com valores compatíveis, pois a definição da tabela continua existindo.",
+                  "Executar CREATE TABLE rascunho com o mesmo nome, pois DELETE removeu o objeto tabela.",
+                  "Recriar as colunas antes do INSERT, pois DELETE preserva o nome da tabela, mas remove sua definição de campos.",
+                  "Inserir somente as colunas com DEFAULT, pois DELETE torna as demais colunas indisponíveis até a próxima conexão.",
+                  "Usar SELECT para recuperar automaticamente as linhas excluídas, pois a estrutura foi preservada."
+              ],
+        "explanation":  "DELETE elimina linhas, não tipos, colunas ou a tabela. Um novo INSERT pode reutilizá-la. Criar outra tabela com o mesmo nome no mesmo schema causaria conflito. Preservar a estrutura não recupera os registros removidos."
+    },
+    {
+        "id":  "C3-Q17",
+        "context":  "Um iniciante executa SELECT sobrenome FROM contatos, mas a tabela contém somente id, nome, cidade e idade. A conexão está correta e a tabela existe.",
+        "q":  "Qual interpretação do erro é adequada?",
+        "a":  [
+                  "A coluna solicitada não existe nessa tabela; é preciso verificar a estrutura e usar o nome correto.",
+                  "A tabela está vazia e o PostgreSQL não conhece as colunas antes do primeiro INSERT.",
+                  "O usuário precisa inserir uma linha com sobrenome para que a coluna seja criada automaticamente.",
+                  "O SELECT deve ser substituído por UPDATE para consultar uma coluna ausente.",
+                  "O erro indica que falta ORDER BY, sem o qual as colunas não podem ser identificadas."
+              ],
+        "explanation":  "A lista de colunas é definida na estrutura da tabela. SELECT não cria colunas e uma tabela vazia continua tendo estrutura conhecida. Confira a definição — por exemplo com a interface do cliente ou com \\d contatos no psql — e ajuste a consulta."
+    },
+    {
+        "id":  "C3-Q18",
+        "context":  "Um arquivo de exportação precisa ter cidade na primeira coluna e nome na segunda. A tabela contatos foi criada com nome antes de cidade. Nenhuma transformação de dados é necessária.",
+        "q":  "Qual consulta controla diretamente a ordem das colunas na saída?",
+        "a":  [
+                  "SELECT cidade, nome FROM contatos;",
+                  "SELECT nome, cidade FROM contatos ORDER BY cidade;",
+                  "SELECT * FROM contatos ORDER BY cidade, nome;",
+                  "SELECT nome, cidade FROM contatos WHERE cidade IS NOT NULL;",
+                  "SELECT * FROM contatos;"
+              ],
+        "explanation":  "A ordem das expressões na lista SELECT define a ordem das colunas retornadas. ORDER BY controla a sequência das linhas, não a posição das colunas. Não é necessário recriar a tabela para mudar essa apresentação."
+    },
+    {
+        "id":  "C3-Q19",
+        "context":  "Uma tabela simples de teste contém idades 18, 22 e 30. O aluno executa UPDATE contatos SET idade = idade + 1 WHERE idade \u003e= 22. Todas as operações são permitidas e os valores cabem no tipo INTEGER.",
+        "q":  "Quais idades ficam armazenadas ao final?",
+        "a":  [
+                  "18, 23 e 31.",
+                  "19, 23 e 31.",
+                  "18, 22 e 31.",
+                  "18, 23 e 30.",
+                  "18, 1 e 1."
+              ],
+        "explanation":  "O filtro seleciona as linhas que tinham 22 e 30; cada uma recebe seu próprio valor anterior acrescido de um. A linha de idade 18 não satisfaz o WHERE e permanece intacta. A expressão de SET não atribui o mesmo literal 1 a todos."
+    },
+    {
+        "id":  "C3-Q20",
+        "context":  "Uma revisão pede o nome dos contatos que não moram no estado PR. Nesta tabela de teste, uf é sempre preenchida e contém somente códigos válidos. O analista quer filtrar linhas, sem mudar a tabela.",
+        "q":  "Qual consulta atende ao pedido?",
+        "a":  [
+                  "SELECT nome FROM contatos WHERE uf \u003c\u003e \u0027PR\u0027;",
+                  "SELECT nome FROM contatos WHERE uf = \u0027PR\u0027;",
+                  "SELECT nome FROM contatos ORDER BY uf \u003c\u003e \u0027PR\u0027;",
+                  "DELETE FROM contatos WHERE uf = \u0027PR\u0027;",
+                  "SELECT uf FROM contatos WHERE nome \u003c\u003e \u0027PR\u0027;"
+              ],
+        "explanation":  "\u003c\u003e significa diferente. A premissa de uf sempre preenchida evita a questão adicional de NULL, que não satisfaria a comparação. ORDER BY não exclui registros e DELETE altera a tabela em vez de produzir somente o relatório."
+    },
+    {
+        "id":  "C4-Q11",
+        "context":  "Uma tabela de teste contém nomes Ana, Anabela, Anas e Mariana. O requisito é localizar nomes que tenham Ana seguido de exatamente um caractere, usando LIKE sensível a maiúsculas.",
+        "q":  "Qual padrão atende ao requisito e qual nome ele encontra nessa lista?",
+        "a":  [
+                  "LIKE \u0027Ana_\u0027; encontra Anas.",
+                  "LIKE \u0027Ana%\u0027; encontra somente Anas.",
+                  "LIKE \u0027%Ana\u0027; encontra Anas.",
+                  "LIKE \u0027_Ana\u0027; encontra Anabela.",
+                  "LIKE \u0027Ana\u0027; encontra Anas."
+              ],
+        "explanation":  "No LIKE, _ representa exatamente um caractere e % representa zero ou mais. O padrão deve corresponder ao texto inteiro. Ana_ exige quatro caracteres: Ana e mais um; Anas atende, enquanto Ana e Anabela têm comprimentos diferentes."
+    },
+    {
+        "id":  "C4-Q12",
+        "context":  "Um cadastro recebe email opcional. Três linhas de teste têm, respectivamente, NULL, texto vazio \u0027\u0027 e \u0027ana@example.test\u0027. A equipe quer localizar apenas o valor ausente, sem confundi-lo com texto vazio.",
+        "q":  "Qual filtro retorna somente a primeira linha?",
+        "a":  [
+                  "WHERE email IS NULL",
+                  "WHERE email = \u0027\u0027",
+                  "WHERE email = NULL",
+                  "WHERE email IS NOT NULL",
+                  "WHERE email \u003c\u003e \u0027ana@example.test\u0027"
+              ],
+        "explanation":  "IS NULL testa ausência diretamente. Texto vazio é um valor conhecido e não satisfaz esse teste. = NULL resulta em desconhecido. A comparação com o endereço conhecido não faz NULL passar pelo WHERE e selecionaria o texto vazio."
+    },
+    {
+        "id":  "C4-Q13",
+        "context":  "Em um relatório, o preço de um produto é exatamente 500. O CASE é: CASE WHEN preco \u003c 100 THEN \u0027baixo\u0027 WHEN preco \u003c= 500 THEN \u0027medio\u0027 ELSE \u0027alto\u0027 END. O preço não é NULL.",
+        "q":  "Qual classificação será produzida?",
+        "a":  [
+                  "medio, pois o segundo teste inclui 500 e é o primeiro teste verdadeiro.",
+                  "alto, pois todo limite superior de CASE é exclusivo.",
+                  "baixo, pois o primeiro WHEN também serve como valor padrão.",
+                  "NULL, pois CASE só classifica preços estritamente entre os limites.",
+                  "medio e alto em duas linhas, pois ambas as faixas são avaliadas como saídas."
+              ],
+        "explanation":  "CASE retorna o resultado do primeiro WHEN verdadeiro. 500 não é menor que 100, mas é menor ou igual a 500. O ELSE só seria escolhido se nenhum WHEN anterior fosse verdadeiro; CASE não gera uma linha para cada ramo."
+    },
+    {
+        "id":  "C4-Q14",
+        "context":  "Duas linhas têm cidade=\u0027Santa Helena\u0027, uma com uf=\u0027PR\u0027 e outra com uf=\u0027SC\u0027. Uma terceira repete cidade=\u0027Santa Helena\u0027, uf=\u0027PR\u0027. Você executa SELECT DISTINCT cidade, uf FROM clientes.",
+        "q":  "Quantas linhas resultam e qual é o motivo?",
+        "a":  [
+                  "Duas, pois DISTINCT considera a combinação cidade e UF.",
+                  "Uma, pois DISTINCT considera somente a primeira coluna selecionada.",
+                  "Três, pois DISTINCT não pode eliminar duplicatas de colunas textuais.",
+                  "Duas, porque DISTINCT mantém sempre a primeira e a última linha inseridas.",
+                  "Uma, porque o mesmo nome de cidade implica a mesma localização, independentemente da UF."
+              ],
+        "explanation":  "DISTINCT atua sobre todas as expressões selecionadas em conjunto. Os dois pares PR são iguais e viram uma linha; o par SC é diferente e permanece. A identidade geográfica não é inferida pelo texto da cidade."
+    },
+    {
+        "id":  "C4-Q15",
+        "context":  "Um cliente está no PR e possui ativo=false. A consulta utiliza WHERE uf = \u0027PR\u0027 OR uf = \u0027SP\u0027 AND ativo = true. Não há outros filtros.",
+        "q":  "Esse cliente aparece no resultado?",
+        "a":  [
+                  "Sim; AND tem precedência e a condição uf=\u0027PR\u0027 já torna o OR verdadeiro.",
+                  "Não; ativo=true é aplicado automaticamente a todos os estados citados.",
+                  "Não; OR tem precedência e exige que ambos os estados sejam avaliados junto com ativo.",
+                  "Sim; uma coluna BOOLEAN false é tratada como NULL e não pode excluir linhas.",
+                  "A consulta falha porque OR e AND não podem ser usados sem parênteses."
+              ],
+        "explanation":  "A expressão equivale a uf=\u0027PR\u0027 OR (uf=\u0027SP\u0027 AND ativo=true). Para um cliente do PR, o primeiro termo já é verdadeiro. A exigência de atividade para os dois estados precisa de (uf=\u0027PR\u0027 OR uf=\u0027SP\u0027) AND ativo=true."
+    },
+    {
+        "id":  "C4-Q16",
+        "context":  "Uma tabela usa status VARCHAR(20) DEFAULT \u0027pendente\u0027 e permite NULL. O default foi definido quando a tabela foi criada; uma linha inserida depois recebeu NULL explicitamente. Você consulta essa linha sem modificá-la.",
+        "q":  "Qual valor está armazenado em status?",
+        "a":  [
+                  "NULL, porque um NULL explícito não aciona automaticamente a expressão DEFAULT.",
+                  "pendente, porque o default substitui qualquer ausência em toda leitura.",
+                  "O texto \u0027NULL\u0027, porque VARCHAR converte o marcador de ausência em quatro caracteres.",
+                  "Uma string vazia, porque o tipo VARCHAR não distingue vazio de NULL.",
+                  "O último status não nulo inserido na tabela, pois DEFAULT reutiliza o valor anterior."
+              ],
+        "explanation":  "DEFAULT é usado quando a coluna é omitida ou quando a palavra DEFAULT é solicitada no INSERT. O literal SQL NULL expressa uma escolha diferente e fica armazenado como ausência se as restrições permitirem."
+    },
+    {
+        "id":  "C4-Q17",
+        "context":  "Um relatório usa SELECT upper(nome) AS nome_maiusculo FROM clientes. Antes da consulta, uma linha contém nome=\u0027Ana Silva\u0027. Nenhum UPDATE é executado.",
+        "q":  "Qual resultado e qual efeito no cadastro são esperados?",
+        "a":  [
+                  "O resultado mostra ANA SILVA sob o rótulo nome_maiusculo; o valor armazenado continua Ana Silva.",
+                  "O resultado mostra ANA SILVA e a coluna armazenada passa a conter esse texto.",
+                  "O resultado continua Ana Silva; upper só altera o rótulo para maiúsculas.",
+                  "A coluna nome é renomeada permanentemente para nome_maiusculo.",
+                  "Uma nova coluna nome_maiusculo é criada no cadastro com o resultado calculado."
+              ],
+        "explanation":  "Funções no SELECT calculam valores de saída. AS dá nome à expressão no resultado. Nenhuma das duas operações equivale a UPDATE ou ALTER TABLE; uma nova consulta simples a nome continua lendo o valor original."
+    },
+    {
+        "id":  "C4-Q18",
+        "context":  "Uma equipe quer evitar ambiguidade entre dia e mês nos exemplos SQL. Precisa representar 16 de outubro de 2026 em uma coluna DATE e distinguir uma data de um horário ou texto de apresentação.",
+        "q":  "Qual expressão é a escolha apropriada para esse valor?",
+        "a":  [
+                  "DATE \u00272026-10-16\u0027",
+                  "DATE \u00272026-16-10\u0027",
+                  "TIME \u002716:10:26\u0027",
+                  "\u002716/10/2026\u0027 AS DATE",
+                  "2026 - 10 - 16"
+              ],
+        "explanation":  "DATE seguido de um literal ISO ano-mês-dia expressa diretamente a data desejada. 2026-16-10 não tem mês válido; TIME é outro tipo; AS define alias, não faz conversão; subtrair números produz um número, não uma data."
+    },
+    {
+        "id":  "C4-Q19",
+        "context":  "Um produto tem preco=NULL. A consulta calcula CASE WHEN preco \u003c 100 THEN \u0027baixo\u0027 WHEN preco \u003c= 500 THEN \u0027medio\u0027 ELSE \u0027alto\u0027 END. Não existe um WHEN específico para NULL.",
+        "q":  "Qual resultado aparece e qual ajuste permite distinguir preço desconhecido?",
+        "a":  [
+                  "Aparece alto; acrescente primeiro WHEN preco IS NULL THEN \u0027sem preco\u0027.",
+                  "Aparece baixo; substitua a primeira comparação por preco = NULL.",
+                  "Aparece NULL automaticamente; CASE nunca aplica ELSE a valores ausentes.",
+                  "A consulta falha; NULL não pode ser usado em uma expressão CASE.",
+                  "Aparece medio; BETWEEN seria suficiente para identificar ausência."
+              ],
+        "explanation":  "As duas comparações com NULL não são verdadeiras; por isso o CASE cai no ELSE. Isso pode gerar uma classificação semanticamente inadequada. Trate a ausência explicitamente com IS NULL antes das faixas de preço."
+    },
+    {
+        "id":  "C4-Q20",
+        "context":  "Um relatório precisa localizar nomes que terminam com Silva. Os exemplos são \u0027Ana Silva\u0027, \u0027Silvana Costa\u0027 e \u0027Bruno Silva Junior\u0027. A busca será por regex sensível a maiúsculas e o final do texto deve coincidir com Silva.",
+        "q":  "Qual condição seleciona somente o primeiro exemplo?",
+        "a":  [
+                  "WHERE nome ~ \u0027Silva$\u0027",
+                  "WHERE nome ~ \u0027^Silva\u0027",
+                  "WHERE nome ~ \u0027Silva\u0027",
+                  "WHERE nome LIKE \u0027Silva%\u0027",
+                  "WHERE nome LIKE \u0027%Silva%\u0027"
+              ],
+        "explanation":  "Na regex, $ ancora no fim e ^ no início. Sem âncora, Silva pode ser encontrado dentro de Silvana ou antes de Junior. Em LIKE, os padrões com % nas duas pontas também aceitam ocorrências no meio, não apenas o sufixo desejado."
+    },
+    {
+        "id":  "C5-Q11",
+        "context":  "Uma tabela de teste contém descontos 0, 10 e NULL. O zero significa que o pedido não teve desconto; NULL significa que a informação ainda não foi apurada. A consulta usa AVG(desconto).",
+        "q":  "Qual média é calculada e como interpretar o denominador?",
+        "a":  [
+                  "5; entram dois valores conhecidos, inclusive o zero.",
+                  "3,33; NULL entra como zero e os três pedidos compõem o denominador.",
+                  "10; tanto o zero quanto NULL são ignorados pela média.",
+                  "NULL; basta uma entrada ausente para invalidar todo o agregado.",
+                  "0; a existência de desconto zero tem prioridade no AVG."
+              ],
+        "explanation":  "AVG ignora NULL, mas considera zero como dado válido. O cálculo é (0+10)/2=5. Se a regra de negócio exigir que desconhecido valha zero, isso é outra decisão e deve ser expressa, não presumida como comportamento do agregado."
+    },
+    {
+        "id":  "C5-Q12",
+        "context":  "No conjunto de teste, o cliente 1 tem pedidos pagos de 300 e 200 e um pendente de 900. O cliente 2 tem um pedido pago de 450. Deseja-se listar clientes com total pago acima de 400, sem somar pendências.",
+        "q":  "Qual consulta implementa corretamente essa regra?",
+        "a":  [
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 GROUP BY cliente_id HAVING SUM(valor_total)\u003e400;",
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos GROUP BY cliente_id HAVING SUM(valor_total)\u003e400;",
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 AND valor_total\u003e400 GROUP BY cliente_id;",
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE SUM(valor_total)\u003e400 GROUP BY cliente_id;",
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 GROUP BY cliente_id, valor_total HAVING SUM(valor_total)\u003e400;"
+              ],
+        "explanation":  "WHERE remove os pedidos não pagos antes da soma; GROUP BY forma um grupo por cliente; HAVING testa o total do grupo. Os resultados são cliente 1=500 e cliente 2=450. Filtrar valor_total\u003e400 antes da soma perderia os dois pedidos pagos do cliente 1."
+    },
+    {
+        "id":  "C5-Q13",
+        "context":  "Um agrupamento por UF contém três clientes com uf=NULL, dois com uf=\u0027PR\u0027 e um com uf=\u0027SP\u0027. Executa-se SELECT uf, COUNT(*), COUNT(uf) FROM clientes GROUP BY uf.",
+        "q":  "Quais contagens aparecem no grupo cuja UF é NULL?",
+        "a":  [
+                  "COUNT(*)=3 e COUNT(uf)=0.",
+                  "COUNT(*)=3 e COUNT(uf)=3.",
+                  "COUNT(*)=0 e COUNT(uf)=0.",
+                  "COUNT(*)=1 e COUNT(uf)=0.",
+                  "Não existe grupo para UF NULL."
+              ],
+        "explanation":  "GROUP BY reúne as três chaves nulas. COUNT(*) conta as linhas desse grupo; COUNT(uf) conta somente valores não nulos da expressão e por isso retorna zero. A existência de um grupo nulo e o tratamento de NULL pelo agregado são regras distintas."
+    },
+    {
+        "id":  "C5-Q14",
+        "context":  "Uma tabela de pedidos contém apenas status pago e pendente. Duas consultas filtram status=\u0027inexistente\u0027: a primeira agrega COUNT(*) sem GROUP BY; a segunda seleciona status e COUNT(*) agrupando por status.",
+        "q":  "Como diferem as quantidades de linhas retornadas?",
+        "a":  [
+                  "A primeira retorna uma linha com contagem 0; a segunda não retorna linhas, pois não há grupos.",
+                  "Ambas retornam uma linha com status NULL e contagem 0.",
+                  "A primeira não retorna linhas; a segunda retorna uma linha com contagem 0.",
+                  "Ambas retornam erro, pois não há entradas para COUNT.",
+                  "A primeira retorna uma linha com contagem NULL; a segunda retorna duas linhas, uma por status existente."
+              ],
+        "explanation":  "Uma agregação global sem GROUP BY produz uma linha mesmo com entrada vazia. No agrupamento por status, nenhuma linha passa no WHERE e não há chaves para formar grupos. COUNT não retorna NULL no agregado global."
+    },
+    {
+        "id":  "C5-Q15",
+        "context":  "Ana tem três pedidos, de 100, 200 e 300; Bruno tem um pedido de 1000. Você quer a média do valor de todos os pedidos, dando o mesmo peso a cada pedido, não a cada cliente.",
+        "q":  "Qual cálculo representa essa média?",
+        "a":  [
+                  "SUM(valor_total)/COUNT(*) sobre os quatro pedidos: 400.",
+                  "Média das médias por cliente: (200+1000)/2 = 600.",
+                  "Soma dos pedidos dividida pelo número de clientes: 800.",
+                  "Média apenas dos maiores pedidos de cada cliente: 650.",
+                  "Soma das médias por cliente: 1200."
+              ],
+        "explanation":  "A soma é 1600 e há quatro pedidos: AVG(valor_total)=400. A média das médias por cliente daria peso igual a clientes com quantidades diferentes de pedidos e responderia a outra pergunta. Com NUMERIC, a divisão pode preservar casas decimais."
+    },
+    {
+        "id":  "C5-Q16",
+        "context":  "Um relatório precisa conter uma linha por cliente e por status, com quantidade de pedidos em cada combinação. Um mesmo cliente pode ter pedidos pagos e pendentes.",
+        "q":  "Qual agrupamento corresponde à granularidade pedida?",
+        "a":  [
+                  "GROUP BY cliente_id, status",
+                  "GROUP BY cliente_id",
+                  "GROUP BY status",
+                  "GROUP BY cliente_id, status, id",
+                  "ORDER BY cliente_id, status, sem GROUP BY"
+              ],
+        "explanation":  "Cada combinação de cliente e status deve formar um grupo. Incluir id do pedido fragmentaria o grupo por pedido; usar só cliente misturaria status; usar só status misturaria clientes. ORDER BY ordena linhas, mas não agrega."
+    },
+    {
+        "id":  "C5-Q17",
+        "context":  "Uma tabela de preços tem os valores não nulos 50, 50 e 100. Um colega usa SELECT SUM(DISTINCT preco) e obtém 150, enquanto outro usa SELECT SUM(preco) e obtém 200.",
+        "q":  "Por que os resultados diferem?",
+        "a":  [
+                  "DISTINCT dentro de SUM elimina valores de preço repetidos antes de somar; não equivale a somar todas as linhas.",
+                  "SUM(DISTINCT preco) remove apenas linhas cuja chave primária é duplicada.",
+                  "SUM(preco) adiciona automaticamente um valor extra quando encontra preços iguais.",
+                  "DISTINCT converte preços para texto e a soma passa a usar ordem alfabética.",
+                  "O resultado 150 indica que uma linha com 50 foi tratada como NULL por erro de precisão."
+              ],
+        "explanation":  "SUM(DISTINCT preco) soma os valores distintos 50 e 100. SUM(preco) soma as três entradas, incluindo as duas ocorrências de 50. Eliminar preços repetidos não é uma forma geral de corrigir duplicação indevida de entidades em consultas."
+    },
+    {
+        "id":  "C5-Q18",
+        "context":  "Em um relatório, cada estado deve ter mais de dois clientes cadastrados para aparecer. O analista quer mostrar a UF e sua contagem e, no resultado final, ordenar pelo maior grupo primeiro.",
+        "q":  "Qual sequência de cláusulas e condição está correta?",
+        "a":  [
+                  "FROM clientes GROUP BY uf HAVING COUNT(*) \u003e 2 ORDER BY COUNT(*) DESC",
+                  "FROM clientes WHERE COUNT(*) \u003e 2 GROUP BY uf ORDER BY COUNT(*) DESC",
+                  "FROM clientes GROUP BY uf HAVING COUNT(*) \u003e= 2 ORDER BY COUNT(*) DESC",
+                  "FROM clientes ORDER BY COUNT(*) DESC GROUP BY uf HAVING COUNT(*) \u003e 2",
+                  "FROM clientes GROUP BY uf ORDER BY uf HAVING COUNT(*) \u003e 2"
+              ],
+        "explanation":  "A restrição sobre o agregado pertence ao HAVING e \u003e2 exclui exatamente dois clientes. ORDER BY vem depois e organiza o resultado agrupado. As opções com WHERE agregado ou ordem sintática trocada não implementam uma consulta válida desse nível."
+    },
+    {
+        "id":  "C5-Q19",
+        "context":  "Uma UF possui quatro pedidos com valores 100, 200, NULL e 0. Nenhum filtro foi aplicado e deseja-se MIN(valor_total), MAX(valor_total) e COUNT(valor_total).",
+        "q":  "Qual tripla de resultados é esperada?",
+        "a":  [
+                  "0; 200; 3.",
+                  "100; 200; 2.",
+                  "NULL; NULL; 4.",
+                  "0; 200; 4.",
+                  "100; 200; 3."
+              ],
+        "explanation":  "MIN e MAX ignoram NULL, mas zero é um valor conhecido e é o menor. COUNT(valor_total) conta os três valores não nulos: 100, 200 e 0. COUNT(*) seria quatro, mas não foi o agregado pedido."
+    },
+    {
+        "id":  "C5-Q20",
+        "context":  "Um relatório por cliente usa SUM(valor_total) AS total. Dois clientes terminam com o mesmo total, e a equipe quer um resultado reproduzível para conferência automática de arquivos.",
+        "q":  "Como ordenar os grupos pelo maior total e desempatar pelo id do cliente?",
+        "a":  [
+                  "ORDER BY total DESC, cliente_id ASC",
+                  "ORDER BY total DESC",
+                  "ORDER BY cliente_id ASC, total DESC",
+                  "GROUP BY total DESC, cliente_id ASC",
+                  "HAVING total DESC, cliente_id ASC"
+              ],
+        "explanation":  "ORDER BY total DESC aplica o critério principal, e cliente_id ASC resolve os empates. Como há um grupo por cliente, esse id funciona como desempate estável. Agrupamento e filtragem de grupos não substituem a ordenação."
+    },
+    {
+        "id":  "C6-Q11",
+        "context":  "Em um conjunto isolado, o cliente 1 tem pedidos 101 e 102, de 100 e 200. O cliente 2 tem o pedido 103, de 300. A consulta faz JOIN entre clientes e pedidos usando c.id=p.cliente_id, sem filtros.",
+        "q":  "Qual contagem de linhas e soma de p.valor_total são esperadas?",
+        "a":  [
+                  "3 linhas e soma 600.",
+                  "2 linhas e soma 600.",
+                  "6 linhas e soma 1200.",
+                  "3 linhas e soma 300.",
+                  "1 linha e soma 600."
+              ],
+        "explanation":  "Cada pedido encontra exatamente um cliente, então há três linhas. A repetição do nome do cliente 1 é natural e não duplica o pedido. Sem junção adicional de itens, cada valor do pedido entra uma vez na soma."
+    },
+    {
+        "id":  "C6-Q12",
+        "context":  "O pedido 101 vale 250 e contém dois itens. A junção entre pedidos e itens por pedido_id produz duas linhas desse pedido. Sobre esse conjunto, um relatório calcula SUM(p.valor_total), sem outros pedidos na entrada.",
+        "q":  "Qual valor a soma retorna e por que ele está errado como total de vendas desse pedido?",
+        "a":  [
+                  "500; o valor do cabeçalho é repetido para cada item e foi somado duas vezes.",
+                  "250; o PostgreSQL reconhece a PK e conta cada cabeçalho uma única vez no SUM.",
+                  "125; o valor do pedido é dividido automaticamente pelo número de itens.",
+                  "0; um agregado sobre uma junção exige que todos os campos sejam agrupados.",
+                  "NULL; o relacionamento um-para-muitos impede a soma de colunas do cabeçalho."
+              ],
+        "explanation":  "A junção produz duas linhas com p.valor_total=250 em cada uma. SUM recebe essas duas entradas e retorna 500. Para totalizar vendas, agregue na granularidade correta; para conferir o pedido pelos itens, some quantidade*preco_unitario. SUM(DISTINCT p.valor_total) não é correção geral, pois pedidos distintos podem ter totais iguais."
+    },
+    {
+        "id":  "C6-Q13",
+        "context":  "Um analista liga clientes a pedidos corretamente, mas inclui vendedores no FROM sem nenhuma condição. Há 8 pedidos com clientes válidos e 2 vendedores na tabela.",
+        "q":  "Qual efeito essa falta de condição produz na quantidade de linhas?",
+        "a":  [
+                  "16 linhas, pois cada resultado cliente–pedido combina com os dois vendedores.",
+                  "8 linhas, pois as FKs permitem ao banco deduzir o vendedor de cada pedido.",
+                  "10 linhas, pela soma dos pedidos com os vendedores.",
+                  "4 linhas, pois o resultado é dividido pelo número de vendedores.",
+                  "A consulta sempre retorna erro de sintaxe por haver uma tabela sem condição."
+              ],
+        "explanation":  "Uma tabela sem condição de ligação participa como produto cartesiano. As oito linhas se combinam com os dois vendedores, totalizando dezesseis. A existência de FKs não escreve condições ausentes nem torna todo produto cartesiano um erro sintático."
+    },
+    {
+        "id":  "C6-Q14",
+        "context":  "Um cliente pode ter vários pedidos, e cada pedido referencia exatamente um vendedor. O objetivo é mostrar o vendedor do pedido, não um eventual gerente responsável pelo cadastro do cliente.",
+        "q":  "Qual condição liga corretamente pedidos p a vendedores v?",
+        "a":  [
+                  "p.vendedor_id = v.id",
+                  "p.cliente_id = v.id",
+                  "p.id = v.id",
+                  "v.id = v.id",
+                  "p.vendedor_id \u003c\u003e v.id"
+              ],
+        "explanation":  "A FK de vendedor do pedido é p.vendedor_id e deve ser ligada à chave v.id. Identificadores de entidades diferentes podem coincidir numericamente sem representar o mesmo relacionamento. v.id=v.id não liga as tabelas e tende a produzir multiplicação de linhas."
+    },
+    {
+        "id":  "C6-Q15",
+        "context":  "Em uma tabela de itens, a PK é (pedido_id, produto_id). O produto 7 aparece nos pedidos 101 e 102. Cada combinação pode existir uma vez, e quantidade registra quantas unidades foram compradas.",
+        "q":  "Qual inserção adicional viola essa chave primária?",
+        "a":  [
+                  "Outra linha com pedido_id=101 e produto_id=7, mesmo que a quantidade seja diferente.",
+                  "Uma linha com pedido_id=101 e produto_id=8, desde que ambos existam nas tabelas referenciadas.",
+                  "Uma linha com pedido_id=103 e produto_id=7, desde que ambos existam nas tabelas referenciadas.",
+                  "Uma linha com pedido_id=102 e produto_id=9, desde que ambos existam nas tabelas referenciadas.",
+                  "Uma linha com pedido_id=104 e produto_id=10, desde que ambos existam nas tabelas referenciadas."
+              ],
+        "explanation":  "A PK composta exige unicidade da combinação inteira, não unicidade individual de cada componente. Alterar quantidade não muda a chave. Um mesmo produto pode participar de pedidos distintos, e um pedido pode ter produtos distintos."
+    },
+    {
+        "id":  "C6-Q16",
+        "context":  "Um item registra quantidade=2 e preco_unitario=50 no momento da venda. Depois, produtos.preco passa de 50 para 70. O sistema precisa manter o subtotal histórico do item igual ao que foi vendido.",
+        "q":  "Qual expressão deve ser usada para esse subtotal histórico?",
+        "a":  [
+                  "itens.quantidade * itens.preco_unitario, resultando em 100.",
+                  "itens.quantidade * produtos.preco, resultando em 140.",
+                  "produtos.preco, resultando em 70, pois a quantidade já está implícita na FK.",
+                  "itens.preco_unitario + produtos.preco, resultando em 120.",
+                  "itens.quantidade * produtos.preco, mas o JOIN restaurará automaticamente o preço antigo de 50."
+              ],
+        "explanation":  "O preço registrado no item captura o valor praticado naquela venda; o preço do cadastro é o valor atual. Uma junção normal não consulta automaticamente o histórico de alterações do cadastro. O subtotal histórico continua 2*50=100."
+    },
+    {
+        "id":  "C6-Q17",
+        "context":  "Clientes a e b são duas referências à mesma tabela. Três pessoas, ids 1, 2 e 3, vivem na mesma cidade e UF. A condição usa igualdade de cidade e UF, acrescida de a.id \u003c b.id.",
+        "q":  "Quantos pares são retornados para essas três pessoas?",
+        "a":  [
+                  "3: (1,2), (1,3) e (2,3).",
+                  "6: inclui também (2,1), (3,1) e (3,2).",
+                  "9: inclui as três combinações de cada pessoa consigo mesma.",
+                  "2: somente (1,2) e (2,3), porque os ids devem ser consecutivos.",
+                  "1: somente o par com menor e maior id."
+              ],
+        "explanation":  "a.id\u003cb.id exclui a própria pessoa e escolhe uma orientação para cada par. Para três pessoas há três pares não ordenados. A condição não exige ids consecutivos nem seleciona apenas os extremos."
+    },
+    {
+        "id":  "C6-Q18",
+        "context":  "Um item referencia pedido_id=999, mas não existe pedido de id 999. A coluna possui uma FK válida e ativa para pedidos(id), e a tentativa é de INSERT com esse valor não nulo.",
+        "q":  "Qual comportamento de integridade é esperado?",
+        "a":  [
+                  "O INSERT é rejeitado porque a referência não encontra uma chave correspondente em pedidos.",
+                  "O INSERT cria automaticamente um pedido vazio com id 999.",
+                  "O INSERT é aceito, mas a FK faz esse item aparecer em qualquer INNER JOIN futuro.",
+                  "O banco troca pedido_id por NULL automaticamente, mesmo sem regra adicional.",
+                  "O banco procura um pedido com id próximo de 999 e ajusta a referência."
+              ],
+        "explanation":  "Uma FK ativa valida a correspondência da chave referenciada. Ela não inventa registros pais nem corrige referências por aproximação. O exemplo usa valor não nulo para não misturar a regra de integridade com a permissão de referências opcionais."
+    },
+    {
+        "id":  "C6-Q19",
+        "context":  "A consulta já junta pedidos p, clientes c e itens i corretamente. Falta obter o nome de cada produto. Produtos pr possui id como PK; itens possui produto_id como FK e pedido_id como referência ao cabeçalho.",
+        "q":  "Qual junção adicional recupera o produto de cada item?",
+        "a":  [
+                  "JOIN produtos pr ON pr.id = i.produto_id",
+                  "JOIN produtos pr ON pr.id = i.pedido_id",
+                  "JOIN produtos pr ON pr.id = p.cliente_id",
+                  "JOIN produtos pr ON pr.id = p.id",
+                  "JOIN produtos pr ON pr.nome = c.nome"
+              ],
+        "explanation":  "O caminho para o produto passa pela FK produto_id do item. Usar ids de pedido ou cliente pode produzir correspondências acidentais ou eliminar linhas. Qualificar os campos ajuda a enxergar qual relação cada condição implementa."
+    },
+    {
+        "id":  "C6-Q20",
+        "context":  "Uma consulta deve listar produtos mais baratos que o produto id 2, cujo preço é 150. Os outros produtos são: id 8 com preço 50, id 1 com preço 150 e id 7 com preço 250. O requisito é estritamente mais barato, sem incluir empates de preço.",
+        "q":  "Qual condição, usando aliases p e ref, encontra somente o produto de preço 50?",
+        "a":  [
+                  "JOIN produtos ref ON p.preco \u003c ref.preco WHERE ref.id = 2",
+                  "JOIN produtos ref ON p.preco \u003c= ref.preco WHERE ref.id = 2",
+                  "JOIN produtos ref ON p.preco \u003c\u003e ref.preco WHERE ref.id = 2",
+                  "JOIN produtos ref ON p.id \u003c ref.id WHERE ref.id = 2",
+                  "JOIN produtos ref ON p.preco \u003e ref.preco WHERE ref.id = 2"
+              ],
+        "explanation":  "O requisito compara preços, não identificadores, e exige \u003c. \u003c= incluiria o empate em 150; \u003c\u003e incluiria também 250. O filtro em ref.id fixa qual produto fornece o preço de referência para o non-equijoin."
+    },
+    {
+        "id":  "C11-Q11",
+        "context":  "Um EXPLAIN mostra cost=0.00..120.00 rows=10. Ao executar EXPLAIN ANALYZE, o tempo total é 2,5 ms. Um colega conclui que o planejador errou, pois esperava 120 ms.",
+        "q":  "Qual correção conceitual deve ser feita?",
+        "a":  [
+                  "cost usa unidades de custo do planejador e não equivale diretamente a milissegundos; o tempo medido é outra informação.",
+                  "O tempo deve ser multiplicado por rows, pois cost sempre mede milissegundos por linha.",
+                  "cost=120.00 significa que a tabela possui 120 páginas, portanto o tempo não pode ser 2,5 ms.",
+                  "EXPLAIN ANALYZE não executa a consulta, então 2,5 ms é apenas uma segunda estimativa.",
+                  "rows=10 significa dez execuções da consulta, e cost é o tempo somado dessas execuções."
+              ],
+        "explanation":  "Os custos servem para comparar alternativas segundo o modelo do planejador. rows é a estimativa de linhas do nó, não o número de execuções da consulta. O tempo real é medido por EXPLAIN ANALYZE e pode ser afetado por cache e outras condições."
+    },
+    {
+        "id":  "C11-Q12",
+        "context":  "Uma busca filtrada tem estimativa rows=10, mas o mesmo nó de EXPLAIN ANALYZE retorna actual rows=50000, loops=1. A tabela recebeu uma carga grande e mudou sua distribuição desde a última coleta de estatísticas.",
+        "q":  "Qual investigação inicial é mais justificada por esses indícios?",
+        "a":  [
+                  "Verificar e atualizar estatísticas com ANALYZE e reavaliar estimativas e plano, sem presumir que isso resolve qualquer erro de estimativa.",
+                  "Executar DROP INDEX em todos os índices, pois diferenças de rows comprovam que eles estão corrompidos.",
+                  "Trocar o SELECT por DELETE, pois actual rows mede versões mortas e não resultados.",
+                  "Executar CLUSTER, pois sua função principal é garantir igualdade entre linhas estimadas e reais.",
+                  "Converter todas as colunas para TEXT, pois colunas numéricas não possuem estatísticas de distribuição."
+              ],
+        "explanation":  "Uma mudança grande de volume ou distribuição torna razoável investigar estatísticas desatualizadas. ANALYZE ajuda o planejador, mas correlações, amostragem e a forma dos predicados ainda podem causar divergências. A evidência não demonstra corrupção de índices."
+    },
+    {
+        "id":  "C11-Q13",
+        "context":  "No laboratório, a primeira busca sem índice levou 20 ms e a segunda, ainda sem índice, levou 3 ms. O plano continuou Seq Scan e os buffers passaram de leituras para mais hits. Não houve alteração dos dados.",
+        "q":  "Qual interpretação é compatível com essas observações?",
+        "a":  [
+                  "O aquecimento de cache pode explicar a melhora; a diferença não demonstra efeito de um índice que não foi criado.",
+                  "O PostgreSQL criou automaticamente um índice na segunda execução por detectar a mesma consulta.",
+                  "Seq Scan significa necessariamente leitura física do disco, então o segundo tempo é impossível.",
+                  "Buffers hit indicam falha na leitura e devem ser contados como páginas perdidas.",
+                  "O resultado prova que estatísticas foram corrigidas pelo SELECT e o custo de planejamento desapareceu."
+              ],
+        "explanation":  "Uma página já presente nos buffers pode ser reutilizada sem uma nova leitura pelo PostgreSQL. Isso ajuda a entender por que medir uma única execução é insuficiente. Mesmo um buffer read pode ser atendido por cache do sistema operacional; a métrica não descreve sozinha toda a cadeia de armazenamento."
+    },
+    {
+        "id":  "C11-Q14",
+        "context":  "Um índice B-tree simples em id ajuda consultas pontuais. Outro relatório solicita todas as colunas de quase todas as 200 mil linhas, sem ORDER BY. O planejador usa o índice na primeira consulta e Seq Scan na segunda.",
+        "q":  "Qual conclusão é adequada?",
+        "a":  [
+                  "As escolhas podem ser coerentes: a busca seletiva evita trabalho com o índice, enquanto a leitura ampla pode favorecer a varredura sequencial.",
+                  "As duas consultas deveriam usar o mesmo plano por acessarem a mesma tabela.",
+                  "A segunda consulta prova que o índice só funciona com menos de 200 mil linhas na tabela.",
+                  "A primeira consulta deveria usar Seq Scan porque o índice não contém todas as colunas retornadas.",
+                  "É obrigatório desativar Seq Scan para tornar a comparação válida e preservar a utilidade do índice."
+              ],
+        "explanation":  "Planos são escolhidos por consulta e condições, não apenas pela existência de um índice. Um Index Scan pode buscar colunas na tabela mesmo que não estejam no índice. Ler grande parte das páginas sequencialmente pode ser mais barato que usar acesso indexado para todas elas."
+    },
+    {
+        "id":  "C11-Q15",
+        "context":  "Um administrador pretende executar CLUSTER em uma tabela de treinamento. Há um índice adequado e espaço para o trabalho. Outra sessão tenta consultar essa mesma tabela durante a operação.",
+        "q":  "Qual efeito de bloqueio deve ser considerado?",
+        "a":  [
+                  "CLUSTER obtém ACCESS EXCLUSIVE na tabela, podendo fazer a consulta aguardar até o fim da operação.",
+                  "CLUSTER bloqueia apenas INSERT; leituras nunca precisam aguardar essa operação.",
+                  "CLUSTER bloqueia apenas o índice e não interfere em acessos à tabela.",
+                  "CLUSTER usa o mesmo comportamento concorrente do VACUUM comum, sem bloqueio exclusivo da tabela.",
+                  "CLUSTER cancela automaticamente todas as consultas do servidor, inclusive em outros bancos."
+              ],
+        "explanation":  "CLUSTER reescreve a organização física e adquire ACCESS EXCLUSIVE, conflitante com o acesso usual de leitura. A operação exige planejamento de execução e espaço, mesmo quando o objetivo é melhorar consultas. Não equivale à manutenção concorrente do VACUUM comum."
+    },
+    {
+        "id":  "C11-Q16",
+        "context":  "Depois de excluir 20 mil eventos, um aluno executa VACUUM comum e observa que a tabela continua com tamanho semelhante no disco. Não há erro no comando e as linhas excluídas não aparecem mais nos SELECTs.",
+        "q":  "Qual explicação é adequada?",
+        "a":  [
+                  "O espaço elegível pode ter sido liberado para reutilização interna sem redução proporcional do arquivo; tamanho semelhante não demonstra falha.",
+                  "VACUUM só funciona se a tabela não possuir nenhum índice, então todas as exclusões foram desfeitas.",
+                  "VACUUM comum sempre devolve todo espaço ao SO; o tamanho semelhante prova que DELETE não foi confirmado.",
+                  "As linhas devem continuar visíveis a novos SELECTs até que seja executado DROP INDEX.",
+                  "O tamanho só diminui após ANALYZE, pois esse comando reescreve as páginas sem espaço livre."
+              ],
+        "explanation":  "O VACUUM comum não é uma compactação integral do arquivo. Ele pode liberar espaço reutilizável, e a possibilidade de limpar versões depende também de transações que ainda precisem delas. Uma reescrita como VACUUM FULL tem implicações diferentes e não deve ser escolhida só por esse indicador isolado."
+    },
+    {
+        "id":  "C11-Q17",
+        "context":  "Em uma tabela vazia, cria-se CREATE UNIQUE INDEX ux ON teste(a,b). Insere-se (1,10). As duas colunas permitem NULL e não foi usada a opção NULLS NOT DISTINCT. Considere apenas essa regra de unicidade.",
+        "q":  "Qual nova linha seria rejeitada?",
+        "a":  [
+                  "(1,10), por repetir integralmente a combinação existente.",
+                  "(1,20), por repetir a primeira coluna.",
+                  "(2,10), por repetir a segunda coluna.",
+                  "(NULL,10), por conter um valor ausente.",
+                  "(1,NULL), por conter o mesmo valor da primeira coluna com ausência na segunda."
+              ],
+        "explanation":  "A unicidade composta vale para o par. Repetir a ou b isoladamente é permitido. No comportamento padrão, NULL não é considerado igual a outro NULL para impor essa unicidade. A linha (1,10) repete exatamente a chave não nula e causa violação."
+    },
+    {
+        "id":  "C11-Q18",
+        "context":  "Uma tabela tem PK em id e FK cliente_id para clientes(id). Você inspeciona os índices e encontra o índice da PK, mas nenhum em cliente_id. A FK foi criada com sucesso.",
+        "q":  "Qual conclusão está correta?",
+        "a":  [
+                  "Isso é compatível com PostgreSQL: a FK não cria automaticamente índice no lado que referencia; sua utilidade deve ser avaliada conforme o uso.",
+                  "A FK está desativada, pois ela não pode existir sem índice em cliente_id.",
+                  "O índice da PK em id também indexa automaticamente cliente_id e todas as outras colunas.",
+                  "Uma FK substitui o índice de cliente_id em consultas, oferecendo a mesma estrutura de acesso.",
+                  "O índice em cliente_id só passa a existir após o primeiro JOIN entre as tabelas."
+              ],
+        "explanation":  "A validação referencial e a estrutura de acesso são mecanismos diferentes. Um índice na coluna que referencia pode ajudar consultas e ações sobre o relacionamento, mas não é criado automaticamente pela FK. Avalie carga e planos em vez de supor sua existência."
+    },
+    {
+        "id":  "C11-Q19",
+        "context":  "Em um trecho do plano, um nó interno mostra actual rows=3 loops=100. A equipe quer estimar quantas linhas esse nó produziu ao longo das suas execuções, distinguindo essa medida da saída final de toda a consulta.",
+        "q":  "Qual leitura é a mais adequada?",
+        "a":  [
+                  "Aproximadamente 300 linhas somadas nas execuções do nó; actual rows é uma média por loop e pode estar arredondado.",
+                  "Exatamente 3 linhas somadas, pois loops mede apenas a quantidade de páginas lidas.",
+                  "Exatamente 100 linhas somadas, pois loops substitui actual rows quando é maior que 1.",
+                  "Aproximadamente 103 linhas somadas, obtidas por rows mais loops.",
+                  "A consulta inteira retornou necessariamente 300 linhas, independentemente dos demais nós."
+              ],
+        "explanation":  "EXPLAIN ANALYZE reporta linhas e tempos médios por execução quando loops\u003e1. Multiplicar dá uma noção do trabalho acumulado naquele nó, com limite de precisão por arredondamento. Isso não é necessariamente a cardinalidade final da consulta."
+    },
+    {
+        "id":  "C11-Q20",
+        "context":  "No editor SQL, o aluno executou BEGIN e depois tentou VACUUM (ANALYZE) bdadosql.eventos_lab11. O servidor informa que VACUUM não pode ser executado dentro de um bloco de transação.",
+        "q":  "Como conduzir corretamente essa etapa do laboratório?",
+        "a":  [
+                  "Encerrar a transação de modo apropriado ao seu estado e executar VACUUM isoladamente, com autocommit ativo.",
+                  "Adicionar outro BEGIN antes de VACUUM para criar uma transação interna de manutenção.",
+                  "Substituir por VACUUM FULL dentro do mesmo bloco, pois apenas o VACUUM comum tem essa restrição.",
+                  "Criar um SAVEPOINT e executar VACUUM sem sair da transação.",
+                  "Repetir VACUUM com o schema explícito, pois qualificar a tabela dispensa a restrição transacional."
+              ],
+        "explanation":  "VACUUM não pode rodar dentro de um bloco explícito de transação. Depois do erro, pode ser necessário ROLLBACK para sair do estado abortado; não basta repetir o comando ou criar savepoint. Na interface gráfica, execute o comando isoladamente fora do modo que envolve todo o arquivo em uma transação."
+    }
+]

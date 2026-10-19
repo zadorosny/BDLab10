@@ -1,0 +1,247 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PostgreSQL — Estudo de Bruce Momjian</title><style>:root{color-scheme:dark;background:#0d1117;color:#e6edf3}body{font:16px/1.65 Segoe UI,Arial,sans-serif;max-width:1040px;margin:40px auto;padding:0 28px;background:#0d1117;color:#e6edf3}h1{font-size:30px;color:#8dcaff}h2{margin-top:2em;border-bottom:2px solid #303d4d;padding-bottom:8px;color:#8dcaff}h3{margin-top:1.6em;color:#c7e4ff}li{margin-bottom:12px;padding-left:5px}table{border-collapse:collapse;width:100%;font-size:14px;margin:20px 0;background:#131b26}th,td{border:1px solid #364456;padding:8px;text-align:left}th{background:#203149;color:#e6f2ff}tr:nth-child(even) td{background:#182230}code{font-family:Consolas,monospace;background:#222e3d;color:#b9e2ff;padding:1px 4px;border-radius:4px}pre{background:#161f2b;border:1px solid #364456;border-radius:8px;padding:16px;overflow:auto;white-space:pre-wrap;font-size:13px}pre code{padding:0;background:transparent;color:#d8e8f7}a{color:#79c0ff;text-decoration:underline;text-underline-offset:3px}a:hover{color:#b5ddff}a:focus-visible{outline:2px solid #79c0ff;outline-offset:3px}::selection{background:#315b82;color:#fff}@media print{:root{color-scheme:light;background:#fff;color:#172b3a}body{margin:0;max-width:none;font-size:10pt;padding:0;background:#fff;color:#172b3a}h1,h2,h3{color:#174d70;break-after:avoid}h2{break-before:page;border-color:#cbd5dd}tr,pre{break-inside:avoid}a{color:inherit}table{font-size:9pt;background:#fff}th{background:#eaf2f7;color:#172b3a}th,td{border-color:#cbd5dd}tr:nth-child(even) td{background:#fff}code,pre{background:#f0f3f6;color:#172b3a;border-color:#cbd5dd}pre code{background:transparent;color:#172b3a}@page{size:A4;margin:18mm}}</style></head><body><h1>PostgreSQL — Question&#225;rio e laborat&#243;rios</h1>
+<section id="passo-a-passo" aria-label="Guia de estudo e laboratórios no DBeaver">
+<h2>Como estudar e executar os laborat&#243;rios pelo DBeaver</h2>
+<p>O DBeaver fica no Windows e envia os comandos SQL ao PostgreSQL instalado na VM Ubuntu do Hyper-V. Os arquivos HTML e SQL permanecem no Windows. N&#227;o &#233; necess&#225;rio WSL nem copiar arquivos para a VM. O HTML apresenta os exerc&#237;cios; a execu&#231;&#227;o dos laborat&#243;rios acontece no DBeaver.</p>
+<h3>1. Organize os arquivos</h3>
+<p>Abra Questionario_Multipla_Escolha.html no navegador: s&#227;o 100 quest&#245;es, 20 por cap&#237;tulo, e 40 tarefas pr&#225;ticas. Abra tamb&#233;m PG_BruceMomjian.pdf, na pasta acima. Crie uma pasta pessoal de entregas, com um arquivo de respostas e um arquivo SQL por cap&#237;tulo, por exemplo capitulo_03_respostas.md e capitulo_03_pratica.sql. Preserve os arquivos originais de prepara&#231;&#227;o e solu&#231;&#245;es.</p>
+<h3>2. Ligue a VM e confira a conex&#227;o</h3>
+<p>Inicie a VM Ubuntu pelo Hyper-V e verifique se o PostgreSQL est&#225; em execu&#231;&#227;o. Identifique o IP da VM (no terminal Ubuntu, hostname -I) e a porta do cluster PostgreSQL que ser&#225; usado. A porta usual &#233; 5432, mas confirme a porta real. Windows e VM precisam ter comunica&#231;&#227;o pela rede virtual do Hyper-V.</p>
+<p>No DBeaver do Windows, crie uma conex&#227;o do tipo PostgreSQL. Informe o IP da VM em Host, a porta do cluster, um banco existente de manuten&#231;&#227;o (por exemplo postgres), o usu&#225;rio PostgreSQL e a senha desse usu&#225;rio. A senha do PostgreSQL n&#227;o &#233; necessariamente a senha de acesso ao Ubuntu. Teste a conex&#227;o; se o DBeaver solicitar o driver PostgreSQL, permita o download e teste novamente. localhost aponta para o Windows quando usado nesse campo; use o IP da VM para a conex&#227;o direta.</p>
+<p>Se j&#225; existe uma conex&#227;o funcional com essa VM no DBeaver, reutilize os dados dela. Em caso de timeout ou conex&#227;o recusada, confira IP, rede do Hyper-V, servi&#231;o, porta, listen_addresses e firewall. Em caso de falha de autentica&#231;&#227;o, confira usu&#225;rio, senha e a regra correspondente em pg_hba.conf. O servidor precisa aceitar o IP do Windows; pe&#231;a ao respons&#225;vel pela VM para configurar esse acesso, caso necess&#225;rio. N&#227;o abra acesso irrestrito para resolver o problema.</p>
+<h3>3. Crie ou escolha um banco exclusivo de treinamento</h3>
+<p>Use um banco descart&#225;vel exclusivo para estes exerc&#237;cios. Se ainda n&#227;o existir e seu usu&#225;rio tiver permiss&#227;o CREATEDB, abra um editor SQL associado &#224; conex&#227;o de manuten&#231;&#227;o, ative Auto-commit e execute somente este comando, fora de BEGIN:</p>
+<pre><code>
+CREATE DATABASE bdadosql_estudo;
+</code></pre>
+<p>Depois, crie ou edite uma conex&#227;o do DBeaver para que o campo Database seja bdadosql_estudo. Abrir um editor na conex&#227;o antiga n&#227;o muda automaticamente o banco. Se voc&#234; n&#227;o tiver permiss&#227;o, solicite um banco de treinamento ao respons&#225;vel e conecte-se a ele. N&#227;o repita CREATE DATABASE se o banco j&#225; foi criado. bdadosql_estudo &#233; o banco; bdadosql ser&#225; o schema dentro dele.</p>
+<p>No editor que ser&#225; usado para os laborat&#243;rios, execute:</p>
+<pre><code>
+SELECT current_database() AS banco, current_user AS usuario, version() AS versao;
+</code></pre>
+<p>Confira se o banco retornado &#233; o de treinamento. O material foi preparado para PostgreSQL moderno; use preferencialmente PostgreSQL 18, com usu&#225;rio que possa criar e alterar seus pr&#243;prios objetos. Os SQLs ser&#227;o executados no servidor da VM, mesmo que voc&#234; os edite no Windows.</p>
+<h3>4. Prepare os dados uma &#250;nica vez</h3>
+<p>Abra 00_preparacao.sql no editor SQL do DBeaver e associe o editor &#224; conex&#227;o do banco de treinamento. Confira a conex&#227;o ativa na barra do editor antes de executar. Use a a&#231;&#227;o Executar script SQL para executar o arquivo inteiro em sequ&#234;ncia; executar apenas a instru&#231;&#227;o sob o cursor n&#227;o prepara toda a base. Mantenha Auto-commit ativo e deixe o BEGIN/COMMIT do pr&#243;prio arquivo controlar essa prepara&#231;&#227;o.</p>
+<p>O resultado final deve mostrar clientes = 6, vendedores = 2, produtos = 5, pedidos = 8 e itens = 10. Atualize o navegador de objetos do DBeaver para visualizar o schema bdadosql. A cria&#231;&#227;o e a carga s&#227;o manuais, por esse SQL; n&#227;o h&#225; menu de laborat&#243;rio nem prepara&#231;&#227;o autom&#225;tica.</p>
+<p>Se ocorrer erro, interrompa a execu&#231;&#227;o e confira a causa. Se a transa&#231;&#227;o ficar abortada, execute ROLLBACK antes de continuar. Se o schema j&#225; existir, confira se a prepara&#231;&#227;o anterior foi conclu&#237;da. N&#227;o execute a carga novamente a cada sess&#227;o: ela n&#227;o foi feita para repeti&#231;&#227;o. Para recome&#231;ar do zero, prefira outro banco de treinamento.</p>
+<h3>5. Configure cada editor ou nova sess&#227;o</h3>
+<p>Antes das tarefas, no mesmo editor/conex&#227;o que vai execut&#225;-las, rode:</p>
+<pre><code>
+SET search_path TO bdadosql, public;
+SELECT current_database() AS banco, current_schema() AS schema;
+</code></pre>
+<p>Confira o banco e o schema bdadosql. O search_path vale para a sess&#227;o: repita essa configura&#231;&#227;o ao abrir outra sess&#227;o ou reconectar. Coloque SET search_path no in&#237;cio de seus arquivos pessoais; a prepara&#231;&#227;o inicial n&#227;o precisa ser repetida. Voc&#234; tamb&#233;m pode qualificar nomes, por exemplo bdadosql.clientes.</p>
+<h3>6. Estude um cap&#237;tulo por vez</h3>
+<p>Siga a ordem 3 → 4 → 5 → 6 → 11. No PDF, leia as p&#225;ginas do arquivo: cap&#237;tulo 3 = 39–50; cap&#237;tulo 4 = 51–75; cap&#237;tulo 5 = 77–83; cap&#237;tulo 6 = 85–105; cap&#237;tulo 11 = 159–164. S&#227;o posi&#231;&#245;es no PDF, n&#227;o a numera&#231;&#227;o impressa. Consulte tamb&#233;m as observa&#231;&#245;es do roteiro sobre diferen&#231;as entre a edi&#231;&#227;o hist&#243;rica e o PostgreSQL atual.</p>
+<p>Responda &#224;s 20 quest&#245;es do cap&#237;tulo no HTML, lendo o cen&#225;rio de cada uma. Depois de tentar, clique em Corrigir cap&#237;tulo para ver a nota e os coment&#225;rios; cada acerto vale 0,5 ponto. Ocultar corre&#231;&#227;o mant&#233;m as escolhas enquanto a p&#225;gina estiver aberta. As respostas n&#227;o s&#227;o salvas ao fechar ou recarregar: anote as alternativas, justificativas e notas ou imprima em PDF antes de sair. O question&#225;rio funciona offline; o laborat&#243;rio precisa da conex&#227;o com a VM.</p>
+<h3>7. Execute as oito tarefas do cap&#237;tulo no DBeaver</h3>
+<p>Leia o enunciado do laborat&#243;rio no HTML e escreva sua tentativa no arquivo SQL pessoal. Identifique cada exerc&#237;cio com um coment&#225;rio, por exemplo -- L3.1. Selecione apenas o comando ou bloco daquela tarefa e use Executar instru&#231;&#227;o SQL; para um conjunto de comandos selecionados, use a a&#231;&#227;o de executar script sobre a sele&#231;&#227;o. Confira a sele&#231;&#227;o e a conex&#227;o antes de executar. N&#227;o execute o arquivo inteiro de tentativas a cada nova tarefa.</p>
+<p>Confira a grade de resultados, a quantidade de linhas afetadas e as mensagens do DBeaver. Guarde o SQL, o resultado obtido e uma explica&#231;&#227;o curta. Salve o arquivo SQL no disco do Windows e exporte resultados ou registre capturas quando necess&#225;rio. A execu&#231;&#227;o n&#227;o possui corre&#231;&#227;o autom&#225;tica dos laborat&#243;rios: compare suas evid&#234;ncias com o resultado esperado na solu&#231;&#227;o.</p>
+<p>No cap&#237;tulo 3, voc&#234; cria e altera contatos_lab3. O cap&#237;tulo 4 usa config_lab4 para as demonstra&#231;&#245;es de escrita. Preserve os dados iniciais de clientes, vendedores, produtos, pedidos e itens, usados nos cap&#237;tulos 4, 5 e 6. Antes de UPDATE ou DELETE, confira as linhas com SELECT usando o mesmo filtro. Com Auto-commit ativo, altera&#231;&#245;es bem-sucedidas s&#227;o confirmadas imediatamente; ROLLBACK posterior n&#227;o as desfaz.</p>
+<h3>8. Prepare e execute o cap&#237;tulo 11 na ordem</h3>
+<p>Somente ao chegar ao cap&#237;tulo 11, abra 02_Lab11_Preparacao.sql no mesmo banco e execute o script inteiro uma &#250;nica vez. Confira 200000 linhas em bdadosql.eventos_lab11. Comece L11.1 antes de criar qualquer &#237;ndice: essa medi&#231;&#227;o &#233; a refer&#234;ncia sem &#237;ndices. Siga L11.1 a L11.8 na sequ&#234;ncia, pois as etapas criam &#237;ndices e alteram os dados usados pelas seguintes.</p>
+<p>Execute cada consulta de medi&#231;&#227;o EXPLAIN (ANALYZE, BUFFERS) tr&#234;s vezes nas compara&#231;&#245;es indicadas. Salve os planos textuais completos, buffers, linhas estimadas/reais e tempos. EXPLAIN ANALYZE executa a consulta; diferencie o tempo do plano no servidor do tempo total exibido pelo cliente. Registre tamb&#233;m vers&#227;o do PostgreSQL e condi&#231;&#245;es da VM; planos e tempos variam conforme recursos, cache e ambiente.</p>
+<p>Em L11.4, a tentativa de inserir novamente o c&#243;digo 10 deve ser executada separadamente; o erro de chave duplicada (23505) &#233; esperado. Na solu&#231;&#227;o, essa instru&#231;&#227;o est&#225; comentada: copie-a para sua tentativa sem o marcador de coment&#225;rio somente quando chegar nessa etapa. N&#227;o repita as inser&#231;&#245;es anteriores. Se estiver em uma transa&#231;&#227;o manual e ela ficar abortada, use ROLLBACK e confira quais etapas foram desfeitas antes de continuar.</p>
+<p>Execute cada VACUUM isoladamente, com Auto-commit ativo, sem BEGIN e sem transa&#231;&#227;o pendente. Se houver uma transa&#231;&#227;o aberta, conclua-a conscientemente com COMMIT ou ROLLBACK antes de executar VACUUM. Consulte a sa&#237;da de mensagens para os detalhes de VERBOSE. Se ocorrer erro de execu&#231;&#227;o dentro de bloco de transa&#231;&#227;o, revise o modo de transa&#231;&#227;o do editor.</p>
+<h3>9. Corrija depois de tentar</h3>
+<p>Para a teoria, use Corrigir cap&#237;tulo no pr&#243;prio HTML. Para a pr&#225;tica, abra 03_Solucoes_Laboratorios.sql e leia somente o bloco correspondente &#224; tarefa, como L5.3. N&#227;o execute esse arquivo inteiro: ele cria objetos, altera dados e depende da ordem das atividades. Compare SQL, resultados e coment&#225;rios; explique os erros e refa&#231;a apenas o necess&#225;rio, verificando antes o que j&#225; foi executado.</p>
+<p>04_Gabarito_Questionario.md e Gabarito_Questionario.html atendem &#224;s 50 quest&#245;es discursivas da vers&#227;o original. Para as 100 quest&#245;es de m&#250;ltipla escolha, a corre&#231;&#227;o completa est&#225; no pr&#243;prio Questionario_Multipla_Escolha.html.</p>
+<h3>10. Salve o progresso e retome</h3>
+<p>Ao encerrar, guarde as respostas e notas, os cinco arquivos SQL pessoais, resultados e o relat&#243;rio de desempenho do cap&#237;tulo 11. Anote o &#250;ltimo exerc&#237;cio conclu&#237;do, o banco usado, os scripts de prepara&#231;&#227;o executados e os objetos j&#225; criados. Os arquivos pessoais n&#227;o s&#227;o salvos automaticamente por este material.</p>
+<p>Na pr&#243;xima sess&#227;o, ligue a VM, conecte o DBeaver, confirme current_database(), configure search_path e continue do exerc&#237;cio registrado. N&#227;o repita prepara&#231;&#227;o, CREATE TABLE, CREATE INDEX ou altera&#231;&#245;es j&#225; conclu&#237;das sem conferir o estado. O estudo termina quando as 100 quest&#245;es e as 40 tarefas estiverem feitas e revisadas. Reserve o tempo de leitura e pr&#225;tica, al&#233;m de cerca de 40–60 minutos adicionais por cap&#237;tulo para o question&#225;rio ampliado, ajustando ao seu ritmo.</p>
+</section>
+
+<p>Material autoral em portugu&#234;s baseado nos cap&#237;tulos 3, 4, 5, 6 e 11 de <em>PostgreSQL: Introduction and Concepts</em>, Bruce Momjian, edi&#231;&#227;o Addison–Wesley de 2000/2001, arquivo <code>PG_BruceMomjian.pdf</code>. Os exerc&#237;cios usam um cen&#225;rio pr&#243;prio de treinamento; n&#227;o s&#227;o transcri&#231;&#245;es dos exerc&#237;cios do livro.</p>
+<h2>Roteiro de estudo</h2>
+<table>
+<tr><th>Cap&#237;tulo</th><th>Tema</th><th>P&#225;ginas impressas</th><th>P&#225;ginas do PDF&#185;</th><th>Tempo sugerido</th></tr>
+<tr><td>3</td><td>Comandos SQL b&#225;sicos</td><td>11–22</td><td>39–50</td><td>60–90 min</td></tr>
+<tr><td>4</td><td>Personaliza&#231;&#227;o de consultas</td><td>23–47</td><td>51–75</td><td>90–120 min</td></tr>
+<tr><td>5</td><td>Agrega&#231;&#245;es SQL</td><td>49–55</td><td>77–83</td><td>60–90 min</td></tr>
+<tr><td>6</td><td>Jun&#231;&#245;es entre tabelas</td><td>57–77</td><td>85–105</td><td>90–120 min</td></tr>
+<tr><td>11</td><td>Desempenho</td><td>131–136</td><td>159–164</td><td>90–120 min</td></tr>
+</table>
+<p>&#185; Contagem a partir da primeira p&#225;gina do arquivo, inclusive p&#225;ginas sem numera&#231;&#227;o.</p>
+<p>Leia o cap&#237;tulo, responda &#224;s dez quest&#245;es sem consultar o gabarito e execute o laborat&#243;rio correspondente. Para cada tarefa pr&#225;tica, entregue SQL, resultado e uma breve explica&#231;&#227;o. Em desempenho, entregue tamb&#233;m os planos de execu&#231;&#227;o e as condi&#231;&#245;es de medi&#231;&#227;o.</p>
+<h2>Prepara&#231;&#227;o</h2>
+<p>Use um banco descart&#225;vel de treinamento e uma conta que possa criar schemas, tabelas e &#237;ndices e manter os objetos que criar. N&#227;o use dados de clientes. A prepara&#231;&#227;o cria o schema <code>bdadosql</code> e falha se ele j&#225; existir, para evitar sobrescrever um estudo anterior.</p>
+<p>Execute <code>00_preparacao.sql</code> uma vez. No psql, um exemplo &#233;:</p>
+<pre><code>
+psql -h localhost -U SEU_USUARIO -d SEU_BANCO -v ON_ERROR_STOP=1 -f 00_preparacao.sql
+</code></pre>
+<p>No pgAdmin ou DBeaver, abra o arquivo e execute o SQL. Ao abrir outra sess&#227;o, execute <code>SET search_path TO bdadosql, public;</code>. As tabelas possuem nomes em portugu&#234;s e identificadores expl&#237;citos; n&#227;o &#233; necess&#225;rio estudar sequ&#234;ncias para fazer estes laborat&#243;rios.</p>
+<p>Os laborat&#243;rios 4, 5 e 6 usam a mesma carga inicial e n&#227;o devem alter&#225;-la. O laborat&#243;rio 3 cria sua pr&#243;pria tabela. O laborat&#243;rio 11 cria tabelas pr&#243;prias. Isso permite executar os cinco laborat&#243;rios na sequ&#234;ncia sem recarregar dados. As solu&#231;&#245;es est&#227;o em <code>03_Solucoes_Laboratorios.sql</code>; consulte-as depois de tentar.</p>
+<h2>Cap&#237;tulo 3 — Comandos SQL b&#225;sicos</h2>
+<p>Refer&#234;ncia: se&#231;&#245;es 3.1–3.10. Objetivo: criar uma tabela, inserir, consultar, filtrar, ordenar, atualizar e excluir dados.</p>
+<h3>Question&#225;rio</h3>
+<ol>
+<li><strong>C3-Q01.</strong> Diferencie servidor de banco, banco de dados, tabela, linha e coluna. D&#234; um exemplo de cada no cen&#225;rio de uma loja.</li>
+<li><strong>C3-Q02.</strong> O que <code>CREATE TABLE</code> define? Uma tabela rec&#233;m-criada j&#225; cont&#233;m linhas?</li>
+<li><strong>C3-Q03.</strong> Por que &#233; &#250;til explicitar a lista de colunas em <code>INSERT</code>? O que pode acontecer se os valores forem informados na ordem errada?</li>
+<li><strong>C3-Q04.</strong> Qual a diferen&#231;a entre <code>SELECT *</code> e <code>SELECT nome, cidade</code>? A sele&#231;&#227;o de colunas limita a quantidade de linhas?</li>
+<li><strong>C3-Q05.</strong> Escreva um filtro para pessoas com idade maior ou igual a 18 e menor que 30. Quais limites entram no resultado?</li>
+<li><strong>C3-Q06.</strong> Que linhas s&#227;o afetadas por um <code>UPDATE</code> sem <code>WHERE</code>? E por um <code>DELETE</code> sem <code>WHERE</code>?</li>
+<li><strong>C3-Q07.</strong> Diferencie <code>DELETE FROM contatos</code> de <code>DROP TABLE contatos</code>.</li>
+<li><strong>C3-Q08.</strong> Uma consulta sem <code>ORDER BY</code> garante a ordem de inser&#231;&#227;o? Como ordenar por cidade crescente e idade decrescente?</li>
+<li><strong>C3-Q09.</strong> Em <code>WHERE nome = &#39;Ana&#39;</code>, por que Ana usa aspas simples? Para que servem aspas duplas em SQL?</li>
+<li><strong>C3-Q10.</strong> Como conferir o conjunto de linhas antes de executar <code>UPDATE</code> ou <code>DELETE</code>? Por que essa confer&#234;ncia &#233; &#250;til?</li>
+</ol>
+<h3>Laborat&#243;rio 3 — Cadastro de contatos</h3>
+<p>Tempo: 45–60 min. Crie a tabela <code>contatos_lab3</code>; n&#227;o altere <code>clientes</code>.</p>
+<table>
+<tr><th>id</th><th>nome</th><th>cidade</th><th>uf</th><th>idade</th></tr>
+<tr><td>1</td><td>Ana</td><td>Curitiba</td><td>PR</td><td>22</td></tr>
+<tr><td>2</td><td>Bruno</td><td>Londrina</td><td>PR</td><td>31</td></tr>
+<tr><td>3</td><td>Carla</td><td>S&#227;o Paulo</td><td>SP</td><td>27</td></tr>
+<tr><td>4</td><td>Diego</td><td>Curitiba</td><td>PR</td><td>19</td></tr>
+<tr><td>5</td><td>Elisa</td><td>Santos</td><td>SP</td><td>35</td></tr>
+<tr><td>6</td><td>Fabio</td><td>Recife</td><td>PE</td><td>27</td></tr>
+</table>
+<ol>
+<li><strong>L3.1.</strong> Crie a tabela com <code>id INTEGER</code>, <code>nome VARCHAR(50)</code>, <code>cidade VARCHAR(50)</code>, <code>uf CHAR(2)</code> e <code>idade INTEGER</code>. Insira os seis registros com lista expl&#237;cita de colunas.</li>
+<li><strong>L3.2.</strong> Mostre somente nome e cidade de todos os contatos, ordenados por id.</li>
+<li><strong>L3.3.</strong> Consulte os contatos do PR com idade entre 20 e 31, inclusive. Ordene por id.</li>
+<li><strong>L3.4.</strong> Liste todos por idade decrescente; em caso de empate, nome crescente.</li>
+<li><strong>L3.5.</strong> Confira com <code>SELECT</code> o contato de id 2 e altere somente sua cidade para Maring&#225;. Consulte novamente.</li>
+<li><strong>L3.6.</strong> Confira e remova somente contatos com idade menor que 20. Liste os restantes.</li>
+<li><strong>L3.7.</strong> Crie <code>rascunho_lab3</code>, insira uma linha, execute <code>DELETE</code> sem filtro e consulte a tabela vazia. Depois execute <code>DROP TABLE</code> e explique o que mudou.</li>
+<li><strong>L3.8.</strong> Entregue uma consulta final de <code>contatos_lab3</code> por id. Confira: cinco linhas; Bruno em Maring&#225;; Diego ausente; os demais dados preservados.</li>
+</ol>
+<p>Crit&#233;rio de conclus&#227;o: filtros corretos, ordena&#231;&#227;o reproduz&#237;vel e altera&#231;&#245;es restritas &#224;s linhas previstas.</p>
+<h2>Cap&#237;tulo 4 — Personaliza&#231;&#227;o de consultas</h2>
+<p>Refer&#234;ncia: se&#231;&#245;es 4.1–4.15. Objetivo: trabalhar com tipos, aspas, valores ausentes, padr&#245;es e express&#245;es.</p>
+<h3>Question&#225;rio</h3>
+<ol>
+<li><strong>C4-Q01.</strong> Diferencie <code>CHAR(2)</code>, <code>VARCHAR(50)</code>, <code>INTEGER</code>, <code>NUMERIC(10,2)</code>, <code>DATE</code>, <code>TIME</code> e <code>TIMESTAMP</code>. Qual escolher para pre&#231;o e por qu&#234;?</li>
+<li><strong>C4-Q02.</strong> Como representar o texto <code>D&#39;Avila</code> em um literal SQL sem depender de configura&#231;&#245;es de escape?</li>
+<li><strong>C4-Q03.</strong> <code>NULL</code>, zero e texto vazio representam a mesma coisa? Por que <code>email = NULL</code> n&#227;o encontra emails ausentes?</li>
+<li><strong>C4-Q04.</strong> Compare omitir uma coluna com <code>DEFAULT</code>, usar a palavra <code>DEFAULT</code> e informar <code>NULL</code> explicitamente.</li>
+<li><strong>C4-Q05.</strong> O que um alias com <code>AS</code> altera no resultado? Ele renomeia a coluna armazenada? Mostre um coment&#225;rio de linha e um de bloco.</li>
+<li><strong>C4-Q06.</strong> Qual operador tem preced&#234;ncia: <code>AND</code> ou <code>OR</code>? Compare <code>uf = &#39;PR&#39; OR uf = &#39;SP&#39; AND ativo = true</code> com a vers&#227;o que exige ativo para ambos os estados.</li>
+<li><strong>C4-Q07.</strong> <code>BETWEEN 100 AND 200</code> inclui os extremos? Quando <code>IN</code> facilita a escrita de filtros?</li>
+<li><strong>C4-Q08.</strong> Explique <code>%</code> e <code>_</code> no <code>LIKE</code>. Qual a diferen&#231;a entre <code>LIKE &#39;Ana%&#39;</code>, regex <code>~ &#39;^Ana&#39;</code> e regex <code>~ &#39;Ana&#39;</code>?</li>
+<li><strong>C4-Q09.</strong> Para que servem <code>CASE</code>, <code>DISTINCT</code> e fun&#231;&#245;es como <code>upper()</code>? Em <code>SELECT DISTINCT cidade, uf</code>, a distin&#231;&#227;o vale para qual conjunto de valores?</li>
+<li><strong>C4-Q10.</strong> Diferencie <code>SET</code>, <code>SHOW</code> e <code>RESET</code> em uma sess&#227;o. <code>RESET</code> significa necessariamente adotar o valor de f&#225;brica?</li>
+</ol>
+<h3>Laborat&#243;rio 4 — Filtros e apresenta&#231;&#227;o</h3>
+<p>Use as tabelas <code>clientes</code> e <code>produtos</code> da prepara&#231;&#227;o. Fa&#231;a experi&#234;ncias de escrita somente em uma tabela nova <code>config_lab4</code>.</p>
+<ol>
+<li><strong>L4.1.</strong> Liste id, nome e email dos clientes cujo email &#233; <code>NULL</code>, por id. Compare com o resultado de <code>WHERE email = NULL</code> e explique a diferen&#231;a.</li>
+<li><strong>L4.2.</strong> Crie <code>config_lab4 (id INTEGER, descricao VARCHAR(50), status VARCHAR(20) DEFAULT &#39;pendente&#39;)</code>. Insira tr&#234;s linhas: uma omitindo status, uma usando <code>DEFAULT</code> e outra usando <code>NULL</code>; uma descri&#231;&#227;o deve ser <code>D&#39;Avila</code>. Consulte por id.</li>
+<li><strong>L4.3.</strong> Liste clientes ativos de PR ou SP. Use par&#234;nteses e ordene por id. Depois execute a vers&#227;o sem par&#234;nteses descrita em C4-Q06 e identifique a linha adicional.</li>
+<li><strong>L4.4.</strong> Liste produtos com pre&#231;o entre 100 e 500, inclusive, por id. Em outra consulta, liste clientes de PR ou PE usando <code>IN</code>.</li>
+<li><strong>L4.5.</strong> Liste clientes com nome come&#231;ando por <code>Ana</code> usando <code>LIKE</code>; depois nomes que come&#231;am com A ou B mai&#250;sculos usando regex <code>~ &#39;^[AB]&#39;</code>. Ordene por id.</li>
+<li><strong>L4.6.</strong> Liste cidades e UFs sem repeti&#231;&#227;o, ordenadas por UF e cidade. Depois mostre os nomes em mai&#250;sculas com alias <code>nome_maiusculo</code>. Inclua coment&#225;rios nos comandos.</li>
+<li><strong>L4.7.</strong> Classifique cada produto como <code>baixo</code> (pre&#231;o &lt; 100), <code>medio</code> (100 a 500, inclusive) ou <code>alto</code> (&gt; 500), usando <code>CASE</code>. Mostre id, nome, pre&#231;o e faixa, por id.</li>
+<li><strong>L4.8.</strong> Execute <code>SHOW DateStyle</code>; guarde o valor. Use <code>SET DateStyle TO &#39;SQL, DMY&#39;</code>, consulte <code>DATE &#39;2026-10-16&#39;</code>, execute <code>RESET DateStyle</code> e consulte novamente. Explique se o valor final coincide com o inicial e por que isso pode depender da configura&#231;&#227;o da sess&#227;o.</li>
+</ol>
+<p>Crit&#233;rio de conclus&#227;o: diferenciar <code>NULL</code> de default, controlar preced&#234;ncia e justificar cada padr&#227;o de busca. <code>SET</code> aqui afeta a sess&#227;o, n&#227;o modifica o servidor inteiro.</p>
+<h2>Cap&#237;tulo 5 — Agrega&#231;&#245;es SQL</h2>
+<p>Refer&#234;ncia: se&#231;&#245;es 5.1–5.5. Objetivo: resumir dados, agrupar e filtrar grupos.</p>
+<h3>Question&#225;rio</h3>
+<ol>
+<li><strong>C5-Q01.</strong> Qual a finalidade de <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code> e <code>MAX</code>?</li>
+<li><strong>C5-Q02.</strong> Em uma coluna contendo <code>10</code>, <code>20</code> e <code>NULL</code>, quais s&#227;o <code>COUNT(*)</code>, <code>COUNT(coluna)</code>, <code>SUM(coluna)</code> e <code>AVG(coluna)</code>?</li>
+<li><strong>C5-Q03.</strong> Qual o resultado de <code>COUNT(*)</code> e <code>SUM(valor)</code> quando o filtro n&#227;o encontra nenhuma linha e n&#227;o h&#225; <code>GROUP BY</code>?</li>
+<li><strong>C5-Q04.</strong> O que <code>GROUP BY uf</code> faz? O que muda com <code>GROUP BY uf, cidade</code>?</li>
+<li><strong>C5-Q05.</strong> Por que <code>SELECT uf, nome, COUNT(*) FROM clientes GROUP BY uf</code> &#233; inv&#225;lida neste modelo?</li>
+<li><strong>C5-Q06.</strong> Diferencie <code>WHERE</code> de <code>HAVING</code> e diga qual deles exclui linhas antes do agrupamento.</li>
+<li><strong>C5-Q07.</strong> Corrija <code>SELECT uf, COUNT(<em>) FROM clientes WHERE COUNT(</em>) &gt; 1 GROUP BY uf</code>.</li>
+<li><strong>C5-Q08.</strong> Como os valores <code>NULL</code> da chave de agrupamento s&#227;o agrupados?</li>
+<li><strong>C5-Q09.</strong> Como ordenar estados pela quantidade de clientes, do maior para o menor, e desempatar pela UF?</li>
+<li><strong>C5-Q10.</strong> Antes de excluir pedidos por status, como usar <code>SELECT</code> e <code>COUNT(*)</code> com o mesmo filtro para conferir o impacto?</li>
+</ol>
+<h3>Laborat&#243;rio 5 — Resumo de pedidos</h3>
+<p>Use a carga inicial; n&#227;o execute exclus&#245;es nem atualiza&#231;&#245;es neste laborat&#243;rio. <code>valor_total</code> cont&#233;m o total do pedido e <code>desconto</code> pode ser desconhecido (<code>NULL</code>).</p>
+<ol>
+<li><strong>L5.1.</strong> Calcule quantidade de pedidos, soma, m&#233;dia arredondada para duas casas, m&#237;nimo e m&#225;ximo de <code>valor_total</code>.</li>
+<li><strong>L5.2.</strong> Compare <code>COUNT(*)</code>, <code>COUNT(desconto)</code> e <code>AVG(desconto)</code>. Explique por que desconto desconhecido n&#227;o entra como zero na m&#233;dia.</li>
+<li><strong>L5.3.</strong> Agrupe por status e mostre quantidade e soma dos valores, ordenando por status.</li>
+<li><strong>L5.4.</strong> Mostre quantidade e total por cliente, ordenados pelo total decrescente e por id do cliente.</li>
+<li><strong>L5.5.</strong> Mostre somente clientes com mais de um pedido, usando <code>HAVING</code>.</li>
+<li><strong>L5.6.</strong> Considere apenas pedidos pagos e mostre clientes cuja soma paga seja maior que 400. Use <code>WHERE</code> e <code>HAVING</code> na mesma consulta.</li>
+<li><strong>L5.7.</strong> Agrupe clientes por UF e cidade, com quantidade; ordene por UF e cidade.</li>
+<li><strong>L5.8.</strong> Consulte <code>COUNT(*)</code>, <code>SUM(valor_total)</code> e <code>AVG(valor_total)</code> para <code>status = &#39;inexistente&#39;</code>. Repita agrupando por status e explique por que a quantidade de linhas do resultado muda.</li>
+</ol>
+<p>Crit&#233;rio de conclus&#227;o: totais corretos, tratamento de <code>NULL</code> e uso de <code>WHERE</code>/<code>HAVING</code> no est&#225;gio adequado.</p>
+<h2>Cap&#237;tulo 6 — Jun&#231;&#245;es entre tabelas</h2>
+<p>Refer&#234;ncia: se&#231;&#245;es 6.1–6.14. Objetivo: relacionar tabelas, entender cardinalidade e modelar pedidos com v&#225;rios itens.</p>
+<h3>Question&#225;rio</h3>
+<ol>
+<li><strong>C6-Q01.</strong> Por que separar clientes, pedidos e produtos em tabelas distintas? Cite uma duplica&#231;&#227;o evitada.</li>
+<li><strong>C6-Q02.</strong> Por que qualificar colunas com o nome ou alias da tabela? D&#234; um exemplo de ambiguidade envolvendo <code>id</code>.</li>
+<li><strong>C6-Q03.</strong> O que acontece se duas tabelas aparecem no <code>FROM</code> sem condi&#231;&#227;o de liga&#231;&#227;o? Quantas linhas resultam do produto cartesiano de tabelas com 6 e 8 linhas?</li>
+<li><strong>C6-Q04.</strong> Em um relacionamento cliente–pedidos, por que um cliente pode aparecer v&#225;rias vezes em um <code>INNER JOIN</code>?</li>
+<li><strong>C6-Q05.</strong> Um cliente sem pedidos aparece em um <code>INNER JOIN</code>? Justifique. Como extens&#227;o, cite uma jun&#231;&#227;o que permita inclu&#237;-lo.</li>
+<li><strong>C6-Q06.</strong> Compare usar o nome do cliente e um identificador est&#225;vel como chave de liga&#231;&#227;o. Um c&#243;digo curto e &#250;nico tamb&#233;m pode ser adequado?</li>
+<li><strong>C6-Q07.</strong> O que &#233; self-join? Por que usar dois aliases da mesma tabela?</li>
+<li><strong>C6-Q08.</strong> O que diferencia equijoin de non-equijoin? D&#234; um exemplo usando pre&#231;os.</li>
+<li><strong>C6-Q09.</strong> Por que guardar apenas um <code>produto_id</code> em <code>pedidos</code> n&#227;o representa bem pedidos com v&#225;rios produtos? Como uma tabela de itens resolve isso?</li>
+<li><strong>C6-Q10.</strong> Diferencie chave prim&#225;ria de estrangeira. A exist&#234;ncia de uma FK elimina a necessidade de escrever a condi&#231;&#227;o de jun&#231;&#227;o? O pre&#231;o hist&#243;rico do item deveria depender sempre do pre&#231;o atual do produto?</li>
+</ol>
+<h3>Laborat&#243;rio 6 — Pedidos com v&#225;rios produtos</h3>
+<p>Rela&#231;&#245;es: <code>pedidos.cliente_id → clientes.id</code>; <code>pedidos.vendedor_id → vendedores.id</code>; <code>itens.pedido_id → pedidos.id</code>; <code>itens.produto_id → produtos.id</code>. A chave de <code>itens</code> &#233; <code>(pedido_id, produto_id)</code>. O pre&#231;o unit&#225;rio do item registra o pre&#231;o da venda; o livro usa pre&#231;o do cadastro em seu exemplo, mas discuta o efeito de uma altera&#231;&#227;o futura.</p>
+<ol>
+<li><strong>L6.1.</strong> Fa&#231;a um <code>INNER JOIN</code> entre pedidos e clientes. Mostre pedido, cliente e valor, ordenando por pedido.</li>
+<li><strong>L6.2.</strong> Junte pedidos, clientes e vendedores. Mostre pedido, cliente e vendedor, com aliases claros e ordem por pedido.</li>
+<li><strong>L6.3.</strong> Junte pedidos, clientes, itens e produtos. Mostre pedido, cliente, produto, quantidade e subtotal (<code>quantidade * preco_unitario</code>), ordenando por pedido e produto.</li>
+<li><strong>L6.4.</strong> Agregue os itens por pedido e confira se sua soma coincide com <code>pedidos.valor_total</code>. N&#227;o some <code>valor_total</code> repetido a cada item. Explique essa armadilha de cardinalidade.</li>
+<li><strong>L6.5.</strong> Compare <code>SELECT COUNT(*) FROM clientes CROSS JOIN pedidos</code> com a contagem de uma jun&#231;&#227;o correta. Identifique qual cliente n&#227;o aparece no <code>INNER JOIN</code> usando os dados iniciais, sem exigir subconsulta.</li>
+<li><strong>L6.6.</strong> Fa&#231;a self-join de clientes para encontrar pares da mesma cidade e UF. Exiba cada par uma vez, exclua a combina&#231;&#227;o da pessoa consigo mesma e ordene pelos ids do par.</li>
+<li><strong>L6.7.</strong> Usando self-join de produtos e uma compara&#231;&#227;o <code>&lt;</code> de pre&#231;os, encontre os produtos mais baratos que o produto id 2. Ordene por pre&#231;o e id.</li>
+<li><strong>L6.8.</strong> Junte pedidos, clientes, vendedores, itens e produtos para listar os itens dos pedidos da cliente id 1. Depois consulte o pedido 101 e demonstre seus dois produtos. Explique a fun&#231;&#227;o das duas FKs da tabela de itens.</li>
+</ol>
+<p>Crit&#233;rio de conclus&#227;o: condi&#231;&#245;es completas, oito pedidos na consulta simples e dez linhas na consulta de itens. <code>LEFT JOIN</code> &#233; uma extens&#227;o opcional: o livro desenvolve outer joins no cap&#237;tulo 8, fora do recorte solicitado.</p>
+<h2>Cap&#237;tulo 11 — Desempenho</h2>
+<p>Refer&#234;ncia: se&#231;&#245;es 11.1–11.7. Objetivo: investigar &#237;ndices e planos, distinguir estat&#237;sticas de limpeza e observar organiza&#231;&#227;o f&#237;sica.</p>
+<h3>Question&#225;rio</h3>
+<ol>
+<li><strong>C11-Q01.</strong> Como um &#237;ndice pode reduzir o trabalho de uma busca seletiva? Por que criar &#237;ndices tem custos de disco e escrita?</li>
+<li><strong>C11-Q02.</strong> Ter um &#237;ndice garante que toda consulta o utilize? Por que uma varredura sequencial pode ser a melhor op&#231;&#227;o?</li>
+<li><strong>C11-Q03.</strong> Para um &#237;ndice B-tree <code>(cliente_id, data_evento)</code>, que filtro tende a aproveitar suas primeiras colunas? &#201; correto afirmar que filtros s&#243; por data nunca podem us&#225;-lo?</li>
+<li><strong>C11-Q04.</strong> O que <code>CREATE UNIQUE INDEX</code> impede? Como ele trata v&#225;rios <code>NULL</code> por padr&#227;o? Para duas colunas, a unicidade vale individualmente ou para a combina&#231;&#227;o?</li>
+<li><strong>C11-Q05.</strong> <code>CLUSTER</code> organiza o qu&#234;? Mant&#233;m essa organiza&#231;&#227;o automaticamente ap&#243;s novas escritas? Substitui <code>ORDER BY</code>?</li>
+<li><strong>C11-Q06.</strong> Por que <code>UPDATE</code> e <code>DELETE</code> podem deixar vers&#245;es mortas? Qual a fun&#231;&#227;o do <code>VACUUM</code> comum e como ele difere de <code>VACUUM FULL</code>?</li>
+<li><strong>C11-Q07.</strong> Diferencie <code>ANALYZE</code> de <code>VACUUM</code>. O que <code>VACUUM (ANALYZE)</code> combina?</li>
+<li><strong>C11-Q08.</strong> Diferencie <code>EXPLAIN</code> de <code>EXPLAIN ANALYZE</code>. Os n&#250;meros de <code>cost</code> s&#227;o milissegundos? O que comparam <code>rows</code> estimado e <code>actual rows</code>?</li>
+<li><strong>C11-Q09.</strong> Por que comparar apenas o tempo de uma execu&#231;&#227;o antes e outra depois do &#237;ndice pode levar a uma conclus&#227;o incorreta?</li>
+<li><strong>C11-Q10.</strong> Um &#237;ndice composto substitui qualquer &#237;ndice simples? Toda FK cria automaticamente um &#237;ndice na coluna que referencia a tabela pai? Como decidir com evid&#234;ncias?</li>
+</ol>
+<h3>Laborat&#243;rio 11 — Diagn&#243;stico de desempenho</h3>
+<p>Tempo: 75–100 min. Use <code>02_Lab11_Preparacao.sql</code>, que gera 200 mil eventos e n&#227;o cria &#237;ndices na tabela <code>eventos_lab11</code>. Ele deve ser executado uma vez ap&#243;s a prepara&#231;&#227;o principal. N&#227;o h&#225; depend&#234;ncia de dados externos. <code>generate_series</code>, fun&#231;&#245;es de tamanho e cat&#225;logos s&#227;o recursos auxiliares apresentados prontos para permitir o experimento.</p>
+<p>Mantenha autocommit ativo. Execute cada <code>VACUUM</code> como comando separado, fora de <code>BEGIN</code> e sem execu&#231;&#227;o do arquivo inteiro em uma transa&#231;&#227;o. Na interface gr&#225;fica, selecione o comando <code>VACUUM</code> isoladamente. Comandos de medi&#231;&#227;o abaixo s&#227;o exemplos fornecidos; as demais consultas devem ser escritas por voc&#234;.</p>
+<pre><code>
+SELECT version();
+SELECT pg_size_pretty(pg_table_size(&#39;bdadosql.eventos_lab11&#39;)) AS tabela,
+       pg_size_pretty(pg_indexes_size(&#39;bdadosql.eventos_lab11&#39;)) AS indices;
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM bdadosql.eventos_lab11 WHERE id = 150000;
+</code></pre>
+<ol>
+<li><strong>L11.1.</strong> Registre vers&#227;o, tamanho da tabela e dos &#237;ndices. Execute <code>ANALYZE</code> e me&#231;a a busca por id acima tr&#234;s vezes. Registre tipo de scan, linhas estimadas/reais, buffers, tempo de planejamento e execu&#231;&#227;o. Esta &#233; a linha de base sem &#237;ndice.</li>
+<li><strong>L11.2.</strong> Crie um &#237;ndice B-tree em <code>id</code>, repita exatamente a consulta tr&#234;s vezes e compare os planos. Compare tamb&#233;m uma consulta que retorna todas as linhas. Explique a decis&#227;o do planejador sem exigir um tipo de scan fixo.</li>
+<li><strong>L11.3.</strong> Crie um &#237;ndice composto em <code>(cliente_id, data_evento)</code>. Compare planos para: cliente 42; cliente 42 de 1 a 10 de abril de 2026, inclusive; e somente esse intervalo de datas. Use datas ISO e mantenha as mesmas colunas selecionadas. Discuta a ordem das colunas sem afirmar que o &#237;ndice &#233; inutiliz&#225;vel quando falta filtro na primeira.</li>
+<li><strong>L11.4.</strong> Em <code>codigos_lab11 (codigo INTEGER)</code>, crie um &#237;ndice &#250;nico. Insira 10, tente inserir 10 de novo e registre o erro esperado. Insira dois <code>NULL</code> e confira o resultado. Execute a tentativa duplicada isoladamente, em autocommit, para continuar os demais passos.</li>
+<li><strong>L11.5.</strong> Me&#231;a um intervalo de datas de eventos do cliente 42 antes e depois de <code>CLUSTER eventos_lab11 USING eventos_lab11_cliente_data_idx</code>, seguido de <code>ANALYZE</code>. Compare buffers e tempos; n&#227;o presuma ganho. Consulte <code>pg_index.indisclustered</code> para identificar o &#237;ndice escolhido. Explique o bloqueio e a necessidade de espa&#231;o para reescrita.</li>
+<li><strong>L11.6.</strong> Atualize <code>status = &#39;revisado&#39;</code> onde <code>id &lt;= 40000</code>; exclua onde <code>id &gt; 180000</code>. Confira as quantidades afetadas. Me&#231;a tamanho e contagem; execute <code>VACUUM (VERBOSE, ANALYZE) bdadosql.eventos_lab11</code> isoladamente e repita as medi&#231;&#245;es. Explique por que espa&#231;o reutiliz&#225;vel n&#227;o implica redu&#231;&#227;o proporcional do arquivo. O autovacuum e outras transa&#231;&#245;es podem influenciar observa&#231;&#245;es.</li>
+<li><strong>L11.7.</strong> Escolha um filtro, compare linhas estimadas/reais e escreva um diagn&#243;stico com evid&#234;ncias. Como extens&#227;o, examine <code>pg_stats</code> para <code>cliente_id</code>. N&#227;o &#233; necess&#225;rio provocar artificialmente estat&#237;sticas ruins.</li>
+<li><strong>L11.8.</strong> Registre o tamanho dos &#237;ndices, remova apenas o &#237;ndice simples de <code>id</code> com <code>DROP INDEX</code> e repita a busca de L11.2. Produza um relat&#243;rio de at&#233; uma p&#225;gina explicando benef&#237;cios, custos e limita&#231;&#245;es das medi&#231;&#245;es. Preserve o &#237;ndice composto para consulta posterior.</li>
+</ol>
+<p>Use esta tabela no relat&#243;rio (uma linha por execu&#231;&#227;o):</p>
+<table>
+<tr><th>Etapa/consulta</th><th>Execu&#231;&#227;o</th><th>Scan</th><th>Linhas estimadas/reais</th><th>Buffers hit/read</th><th>Planejamento (ms)</th><th>Execu&#231;&#227;o (ms)</th><th>Observa&#231;&#245;es</th></tr>
+<tr><td>Sem &#237;ndice / id</td><td>1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+<p>Crit&#233;rio de conclus&#227;o: planos e medi&#231;&#245;es reais registrados, distin&#231;&#227;o entre estimativa e tempo medido, e conclus&#227;o que considere cache, seletividade, estat&#237;sticas e custo de manuten&#231;&#227;o. N&#227;o h&#225; meta fixa de milissegundos ou exig&#234;ncia de ganho percentual.</p>
+<h2>Atualiza&#231;&#245;es em rela&#231;&#227;o &#224; edi&#231;&#227;o hist&#243;rica</h2>
+<ul>
+<li>O <code>VACUUM</code> comum disponibiliza espa&#231;o para reutiliza&#231;&#227;o interna e em geral n&#227;o compacta todo o arquivo nem devolve todo o espa&#231;o ao sistema operacional. <code>VACUUM FULL</code> reescreve a tabela e exige bloqueio exclusivo. A descri&#231;&#227;o hist&#243;rica do livro n&#227;o deve ser aplicada literalmente. Consulte a <a href="https://www.postgresql.org/docs/18/sql-vacuum.html">documenta&#231;&#227;o de VACUUM</a>.</li>
+<li><code>ANALYZE</code> atualiza estat&#237;sticas; <code>VACUUM (ANALYZE)</code> tamb&#233;m faz a limpeza. H&#225; manuten&#231;&#227;o autom&#225;tica por autovacuum; veja <a href="https://www.postgresql.org/docs/18/routine-vacuuming.html">manuten&#231;&#227;o rotineira</a>.</li>
+<li>Restri&#231;&#245;es <code>PRIMARY KEY</code> e <code>UNIQUE</code> criam &#237;ndices automaticamente; uma FK n&#227;o cria automaticamente &#237;ndice no lado que referencia. Veja <a href="https://www.postgresql.org/docs/18/ddl-constraints.html">restri&#231;&#245;es</a>.</li>
+<li>A efici&#234;ncia de &#237;ndices B-tree compostos depende das condi&#231;&#245;es, ordem de colunas e distribui&#231;&#227;o. H&#225; possibilidades de uso sem filtro na primeira coluna, inclusive skip scan no PostgreSQL 18. Veja <a href="https://www.postgresql.org/docs/18/indexes-multicolumn.html">&#237;ndices multicoluna</a>.</li>
+<li><code>CLUSTER</code> exige <code>ACCESS EXCLUSIVE</code>, espa&#231;o de trabalho e n&#227;o mant&#233;m a organiza&#231;&#227;o em novas escritas. A ordem de apresenta&#231;&#227;o exige <code>ORDER BY</code>. Veja <a href="https://www.postgresql.org/docs/18/sql-cluster.html">CLUSTER</a>.</li>
+<li><code>EXPLAIN (ANALYZE, BUFFERS)</code> executa a consulta e mostra medi&#231;&#245;es; neste material &#233; usado com <code>SELECT</code>. Veja <a href="https://www.postgresql.org/docs/18/using-explain.html">leitura de planos</a>.</li>
+</ul>
+<h2>Avalia&#231;&#227;o sugerida</h2>
+<p>S&#227;o <strong>50 quest&#245;es e 40 tarefas pr&#225;ticas</strong>. Cada cap&#237;tulo vale 20 pontos: 10 pelo question&#225;rio (1 por quest&#227;o) e 10 pelo laborat&#243;rio (1,25 por tarefa). Uma resposta conceitual recebe o ponto se explicar corretamente o comportamento; nas tarefas, considere 0,75 pelo SQL/execu&#231;&#227;o e 0,50 pela confer&#234;ncia e explica&#231;&#227;o. Em desempenho, a conclus&#227;o baseada em evid&#234;ncias vale mesmo quando o &#237;ndice ou o CLUSTER n&#227;o melhoram o tempo.</p>
+<p>Antes de consultar as solu&#231;&#245;es, confira se consegue explicar: efeito de um filtro ausente, l&#243;gica de <code>NULL</code>, diferen&#231;a entre <code>WHERE</code> e <code>HAVING</code>, multiplica&#231;&#227;o de linhas em joins e motivos pelos quais o planejador pode ignorar um &#237;ndice.</p>
+</body></html>

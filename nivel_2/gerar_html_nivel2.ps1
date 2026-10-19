@@ -72,6 +72,18 @@ if ([regex]::Matches($renderedBody, $stepsPattern).Count -ne 30) {
 }
 $renderedBody = [regex]::Replace($renderedBody, $stepsPattern,
     '<details class="passo-a-passo"><summary>Ver passo a passo</summary>$1</details>')
+foreach ($section in @(
+    @{ Label='Dica para começar:'; Class='dica'; Summary='Ver dica para começar' },
+    @{ Label='Como conferir seu resultado:'; Class='conferencia'; Summary='Ver como conferir seu resultado' }
+)) {
+    $pattern = '(?s)<p><strong>' + [regex]::Escape((Inline $section.Label)) + '</strong>\s*(.*?)</p>'
+    if ([regex]::Matches($renderedBody, $pattern).Count -ne 30) {
+        throw ('Esperadas 30 seções: ' + $section.Label)
+    }
+    $replacement = '<details class="' + $section.Class + '"><summary>' +
+        (Inline $section.Summary) + '</summary><p>$1</p></details>'
+    $renderedBody = [regex]::Replace($renderedBody, $pattern, $replacement)
+}
 $html = $head + "`n" + $renderedBody + '<footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer></body></html>'
 [IO.File]::WriteAllText((Join-Path $base 'Laboratorios_Nivel2.html'), $html, [Text.UTF8Encoding]::new($false))
 Write-Output 'Gerado: Laboratorios_Nivel2.html (30 desafios e 30 soluções).'

@@ -63,7 +63,7 @@ O pedido 101 é um bom exemplo para acompanhar: seus itens somam 250, o desconto
 
 Leia primeiro a **situação** para entender quem precisa da informação e por quê. Em seguida, veja o **objetivo**, confira os **dados de partida** e faça o **passo a passo**. A **dica** apresenta o recurso novo sem entregar a consulta inteira. Use a **conferência** apenas depois de tentar e registre onde seu resultado divergiu.
 
-No HTML, o passo a passo começa recolhido em cada exercício. Clique em **Ver passo a passo** para abrir as instruções e clique novamente para recolher. Você pode tentar resolver pelo contexto e pelo objetivo antes de consultar os passos.
+No HTML, o passo a passo, a dica e a conferência do resultado começam recolhidos em cada exercício. Clique em **Ver passo a passo**, **Ver dica para começar** ou **Ver como conferir seu resultado** para abrir somente a ajuda desejada; clique novamente para recolher. Você pode tentar resolver pelo contexto e pelo objetivo antes de consultar essas seções.
 
 Nos passos numerados, execute cada etapa antes de seguir para a seguinte. No DBeaver, selecione somente o comando da etapa atual. Quando houver BEGIN, continue no mesmo editor; quando o enunciado mandar provocar um erro, execute essa instrução sozinha e depois a recuperação. Assim você consegue observar os estados intermediários.
 

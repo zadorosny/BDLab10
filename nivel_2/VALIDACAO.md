@@ -24,3 +24,5 @@ Os arquivos do nível 1 permanecem como trilha inicial; suas alterações nesta 
 Na revisão didática, os 30 enunciados receberam contexto, objetivo, dados de partida, passos, dica e conferência. Foram verificados os seis componentes em cada tarefa, a numeração dos passos no HTML e a correspondência das 30 soluções incorporadas com o arquivo SQL. Os preparadores, soluções SQL e resultados esperados não foram alterados nessa revisão; não foram repetidas medições de desempenho.
 
 Na revisão de apresentação dos passos, foram conferidas 30 seções HTML details, inicialmente fechadas, com o controle Ver passo a passo e as listas numeradas preservadas. As 30 soluções continuam em seções recolhidas separadas.
+
+A apresentação também recolhe as 30 dicas e as 30 conferências em controles independentes. Foram conferidos o estado inicialmente fechado, uma seção de cada tipo por exercício e a preservação dos textos e das soluções.

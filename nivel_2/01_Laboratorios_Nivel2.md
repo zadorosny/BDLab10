@@ -63,6 +63,8 @@ O pedido 101 é um bom exemplo para acompanhar: seus itens somam 250, o desconto
 
 Leia primeiro a **situação** para entender quem precisa da informação e por quê. Em seguida, veja o **objetivo**, confira os **dados de partida** e faça o **passo a passo**. A **dica** apresenta o recurso novo sem entregar a consulta inteira. Use a **conferência** apenas depois de tentar e registre onde seu resultado divergiu.
 
+No HTML, o passo a passo começa recolhido em cada exercício. Clique em **Ver passo a passo** para abrir as instruções e clique novamente para recolher. Você pode tentar resolver pelo contexto e pelo objetivo antes de consultar os passos.
+
 Nos passos numerados, execute cada etapa antes de seguir para a seguinte. No DBeaver, selecione somente o comando da etapa atual. Quando houver BEGIN, continue no mesmo editor; quando o enunciado mandar provocar um erro, execute essa instrução sozinha e depois a recuperação. Assim você consegue observar os estados intermediários.
 
 Sua entrega pode ser curta: SQL utilizado, resultado ou captura e duas ou três frases explicando o que aconteceu. Em desempenho, acrescente os planos e as medições. As soluções no fim do HTML são para correção; não é necessário lê-las antes de começar.

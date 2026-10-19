@@ -65,6 +65,13 @@ $head = @'
 <nav aria-label="Navegação dos laboratórios"><a href="#N2-1">1 · Transações</a><a href="#N2-2">2 · Filtros</a><a href="#N2-3">3 · Relatórios</a><a href="#N2-4">4 · Junções</a><a href="#N2-5">5 · Desempenho</a><a href="#solucoes">Soluções</a><a href="../Questionario_Multipla_Escolha.html">Nível 1</a></nav>
 <p class="intro">Trilha prática · 5 laboratórios · 30 desafios · DBeaver no Windows + PostgreSQL na VM. Esta página funciona offline após baixar e extrair o repositório. Salve SQL e evidências em arquivos próprios; esta página não executa SQL nem salva progresso. As soluções ficam recolhidas no final.</p>
 '@
-$html = $head + "`n" + ($body -join "`n") + '<footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer></body></html>'
+$renderedBody = $body -join "`n"
+$stepsPattern = '(?s)<p><strong>Passo a passo:</strong></p>\s*(<ol>.*?</ol>)'
+if ([regex]::Matches($renderedBody, $stepsPattern).Count -ne 30) {
+    throw 'Esperados 30 passos a passo para recolher.'
+}
+$renderedBody = [regex]::Replace($renderedBody, $stepsPattern,
+    '<details class="passo-a-passo"><summary>Ver passo a passo</summary>$1</details>')
+$html = $head + "`n" + $renderedBody + '<footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer></body></html>'
 [IO.File]::WriteAllText((Join-Path $base 'Laboratorios_Nivel2.html'), $html, [Text.UTF8Encoding]::new($false))
 Write-Output 'Gerado: Laboratorios_Nivel2.html (30 desafios e 30 soluções).'

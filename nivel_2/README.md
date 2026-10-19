@@ -4,6 +4,8 @@ Esta trilha continua o nível 1 com **30 desafios distribuídos em cinco laborat
 
 Os exercícios acompanham a equipe de dados da loja fictícia Horizonte. Cada um apresenta situação de trabalho, objetivo, dados de partida, passos numerados, uma dica para começar e o resultado para conferência. O roteiro também explica o papel das tabelas e os recursos novos antes das tarefas. A dificuldade técnica foi mantida, com orientação para construir a solução em etapas.
 
+No HTML, os passos ficam escondidos inicialmente: clique em **Ver passo a passo** no exercício para expandir ou recolher as instruções.
+
 | Laboratório | Tema | Desafios |
 |---|---|---:|
 | N2-1 | Integridade, transações, SAVEPOINT, importação e UPSERT | 6 |

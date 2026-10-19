@@ -103,6 +103,7 @@ SELECT * FROM importacao_contatos ORDER BY lote_id;
 </ul>
 <h2>Como trabalhar cada exerc&#237;cio</h2>
 <p>Leia primeiro a <strong>situa&#231;&#227;o</strong> para entender quem precisa da informa&#231;&#227;o e por qu&#234;. Em seguida, veja o <strong>objetivo</strong>, confira os <strong>dados de partida</strong> e fa&#231;a o <strong>passo a passo</strong>. A <strong>dica</strong> apresenta o recurso novo sem entregar a consulta inteira. Use a <strong>confer&#234;ncia</strong> apenas depois de tentar e registre onde seu resultado divergiu.</p>
+<p>No HTML, o passo a passo come&#231;a recolhido em cada exerc&#237;cio. Clique em <strong>Ver passo a passo</strong> para abrir as instru&#231;&#245;es e clique novamente para recolher. Voc&#234; pode tentar resolver pelo contexto e pelo objetivo antes de consultar os passos.</p>
 <p>Nos passos numerados, execute cada etapa antes de seguir para a seguinte. No DBeaver, selecione somente o comando da etapa atual. Quando houver BEGIN, continue no mesmo editor; quando o enunciado mandar provocar um erro, execute essa instru&#231;&#227;o sozinha e depois a recupera&#231;&#227;o. Assim voc&#234; consegue observar os estados intermedi&#225;rios.</p>
 <p>Sua entrega pode ser curta: SQL utilizado, resultado ou captura e duas ou tr&#234;s frases explicando o que aconteceu. Em desempenho, acrescente os planos e as medi&#231;&#245;es. As solu&#231;&#245;es no fim do HTML s&#227;o para corre&#231;&#227;o; n&#227;o &#233; necess&#225;rio l&#234;-las antes de come&#231;ar.</p>
 <h2>Guia r&#225;pido das ferramentas novas</h2>
@@ -185,84 +186,78 @@ ORDER BY nome;
 <p><strong>Situa&#231;&#227;o:</strong> o sistema da Loja Horizonte recebeu tr&#234;s tipos de informa&#231;&#227;o errada: estoque negativo, um saldo duplicado para o mesmo dep&#243;sito e um pagamento que aponta para uma venda inexistente. Antes de liberar uma importa&#231;&#227;o, a equipe quer saber se o pr&#243;prio banco impede esses erros.</p>
 <p><strong>Seu objetivo:</strong> demonstrar que cada regra est&#225; protegida por uma restri&#231;&#227;o e reconhecer a mensagem que ela produz.</p>
 <p><strong>Dados de partida:</strong> use estoques e pagamentos como vieram da prepara&#231;&#227;o. O produto 1 j&#225; existe nos dep&#243;sitos A e B; o pedido 999 n&#227;o existe.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>No navegador de objetos do DBeaver, abra as restri&#231;&#245;es dessas tabelas. Localize CHECK, chave prim&#225;ria e chave estrangeira. Alternativamente, consulte pg_constraint.</li>
 <li>Abra BEGIN e tente definir o estoque de A como -1. Leia a mensagem e anote o SQLSTATE, que &#233; o c&#243;digo do tipo de erro. Execute ROLLBACK.</li>
 <li>Em outra transa&#231;&#227;o, tente inserir novamente o par produto 1/dep&#243;sito A. Anote o erro e execute ROLLBACK.</li>
 <li>Fa&#231;a o mesmo com um novo pagamento associado ao pedido 999, usando um id de pagamento ainda livre, como 99.</li>
 <li>Consulte os saldos e conte pagamentos para provar que as tentativas n&#227;o modificaram a carga.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> uma chave prim&#225;ria composta protege a combina&#231;&#227;o das colunas. N&#227;o &#233; proibido ter o mesmo produto em dep&#243;sitos diferentes. Depois de um erro, encerre a transa&#231;&#227;o com ROLLBACK antes de testar a pr&#243;xima situa&#231;&#227;o.</p>
 <p><strong>Como conferir seu resultado:</strong> erros esperados 23514 (CHECK), 23505 (unicidade) e 23503 (FK); estoques continuam A=10, B=5 e pagamentos continuam com 12 linhas.</p>
 <h3 id="N2-1.2">N2-1.2 — Transfer&#234;ncia at&#244;mica de estoque</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a opera&#231;&#227;o precisa levar tr&#234;s unidades do Mouse do dep&#243;sito A para o B. N&#227;o houve compra nem venda: apenas mudan&#231;a de lugar. Se o sistema baixar A e falhar antes de aumentar B, o estoque total ficar&#225; incorreto.</p>
 <p><strong>Seu objetivo:</strong> tratar a transfer&#234;ncia como uma &#250;nica opera&#231;&#227;o e conferir sua consist&#234;ncia antes de confirm&#225;-la.</p>
 <p><strong>Dados de partida:</strong> produto 1, A=10, B=5, total=15. O exerc&#237;cio anterior deve ter terminado com ROLLBACK.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Consulte os dois saldos e abra BEGIN na mesma sess&#227;o.</li>
 <li>Subtraia tr&#234;s de A somente se saldo &gt;= 3. Acrescente RETURNING para ver a linha alterada.</li>
 <li>Confira que exatamente uma linha foi debitada. S&#243; nesse caso, acrescente tr&#234;s a B. Se a primeira etapa afetar zero linhas, desfa&#231;a a transa&#231;&#227;o e investigue.</li>
 <li>Consulte A, B e a soma dos saldos. Pergunte: o total mudou ou apenas sua distribui&#231;&#227;o?</li>
 <li>Neste treinamento, termine com ROLLBACK e consulte novamente. Explique em que ponto um sistema real poderia usar COMMIT.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> pense em BEGIN como o in&#237;cio de um conjunto de altera&#231;&#245;es que precisam dar certo juntas. RETURNING mostra o resultado do UPDATE; ele n&#227;o confirma a transa&#231;&#227;o. Uma aplica&#231;&#227;o real deve verificar o sucesso dos dois lados antes do COMMIT.</p>
 <p><strong>Como conferir seu resultado:</strong> dentro da transa&#231;&#227;o, A=7, B=8 e total=15; ap&#243;s ROLLBACK, A=10 e B=5.</p>
 <h3 id="N2-1.3">N2-1.3 — Recuperar uma falha sem perder tudo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a transfer&#234;ncia come&#231;ou corretamente, mas um comando errado tentou deixar o dep&#243;sito B com saldo negativo. A equipe quer recuperar essa etapa sem perder a baixa correta que j&#225; tinha feito em A.</p>
 <p><strong>Seu objetivo:</strong> observar a diferen&#231;a entre desfazer toda a transa&#231;&#227;o e voltar apenas a um ponto intermedi&#225;rio.</p>
 <p><strong>Dados de partida:</strong> estoque restaurado para A=10 e B=5. Fa&#231;a tudo no mesmo editor do DBeaver, comando por comando.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Abra BEGIN e retire duas unidades de A. Agora A deve ter 8.</li>
 <li>Crie um SAVEPOINT chamado antes_da_falha. Ele marca o estado que voc&#234; pretende preservar.</li>
 <li>Execute sozinha uma tentativa de definir B=-1. O erro &#233; esperado; guarde a mensagem.</li>
 <li>Execute ROLLBACK TO SAVEPOINT antes_da_falha. Consulte os saldos e veja se a retirada de A continua presente.</li>
 <li>Corrija a opera&#231;&#227;o: adicione duas unidades a B e confira que o total voltou a 15.</li>
 <li>Termine com ROLLBACK completo para restaurar a carga inicial.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> SAVEPOINT n&#227;o &#233; um salvamento permanente. O ROLLBACK final ainda desfaz inclusive o que ocorreu antes dele. Ap&#243;s o erro, recupere a transa&#231;&#227;o antes de tentar outras consultas.</p>
 <p><strong>Como conferir seu resultado:</strong> ap&#243;s recuperar a falha, A=8 e B=5; ap&#243;s cr&#233;dito, A=8 e B=7; ao final A=10 e B=5. Explique a diferen&#231;a entre ROLLBACK e ROLLBACK TO.</p>
 <h3 id="N2-1.4">N2-1.4 — Diagnosticar o lote bruto</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o cadastro recebeu um arquivo de contatos de outra equipe. H&#225; espa&#231;os extras, letras em formatos diferentes, emails inv&#225;lidos e duas vers&#245;es da mesma pessoa. Importar tudo diretamente esconderia problemas de qualidade.</p>
 <p><strong>Seu objetivo:</strong> produzir um diagn&#243;stico do lote antes de decidir o que pode entrar no cadastro definitivo.</p>
 <p><strong>Dados de partida:</strong> importacao_contatos cont&#233;m sete linhas. lote_id identifica a entrada do arquivo; cliente_id identifica a pessoa. N&#227;o altere essa tabela: ela &#233; sua evid&#234;ncia do que foi recebido.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Fa&#231;a um SELECT do lote original. Em outro SELECT, mostre nome sem espa&#231;os nas pontas, email em min&#250;sculas sem espa&#231;os e UF em mai&#250;sculas.</li>
 <li>Transforme email vazio ap&#243;s o tratamento em NULL. Considere v&#225;lido um nome n&#227;o vazio, UF em PR/SP/PE/RS/RJ/SC e email ausente ou compat&#237;vel com <code>^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$</code>.</li>
 <li>Acrescente uma coluna de diagn&#243;stico com CASE: valido, nome ausente, UF invalida ou email invalido.</li>
 <li>Conte v&#225;lidos e rejeitados. Entre os v&#225;lidos, agrupe por cliente_id para procurar mais de uma entrada da mesma pessoa.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> monte a consulta em etapas: normaliza&#231;&#227;o, classifica&#231;&#227;o e contagem. btrim remove espa&#231;os das pontas; NULLIF(texto,&#39;&#39;) converte texto vazio em NULL. A regex fornecida &#233; somente um filtro did&#225;tico; n&#227;o valida todas as regras de um endere&#231;o de email.</p>
 <p><strong>Como conferir seu resultado:</strong> sete linhas brutas, cinco v&#225;lidas, duas inv&#225;lidas (lotes 6 e 7); cliente 3 tem dois registros v&#225;lidos. N&#227;o elimine duplicatas antes de contar e explicar a qualidade do lote.</p>
 <h3 id="N2-1.5">N2-1.5 — Importar com desempate e repeti&#231;&#227;o segura</h3>
 <p><strong>Situa&#231;&#227;o:</strong> depois do diagn&#243;stico, o cadastro autorizou importar apenas as linhas v&#225;lidas. Para quem aparece duas vezes, vale a entrada de maior lote_id, que representa a vers&#227;o mais recente. O arquivo pode ser reenviado amanh&#227; e n&#227;o deve duplicar pessoas.</p>
 <p><strong>Seu objetivo:</strong> carregar contatos_tratados com uma linha por pessoa e obter o mesmo conte&#250;do quando repetir o processamento.</p>
 <p><strong>Dados de partida:</strong> reaproveite os crit&#233;rios de N2-1.4. contatos_tratados come&#231;a vazia e sua chave &#233; cliente_id. N&#227;o use a tabela clientes como destino desta importa&#231;&#227;o.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Recupere somente as linhas normalizadas e v&#225;lidas.</li>
 <li>Dentro de cada cliente_id, numere as entradas por lote_id decrescente. Separe apenas a primeira de cada grupo.</li>
 <li>Insira os vencedores em contatos_tratados. Se a pessoa j&#225; existir, atualize nome, email e UF com os dados recebidos.</li>
 <li>Consulte o destino por cliente_id e salve o resultado.</li>
 <li>Execute novamente a mesma importa&#231;&#227;o. Compare o conte&#250;do, n&#227;o apenas a quantidade de linhas que o DBeaver informa como afetadas.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> use ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY lote_id DESC) para escolher a vers&#227;o. ON CONFLICT (cliente_id) DO UPDATE resolve a chave j&#225; existente; EXCLUDED representa a linha que voc&#234; tentou inserir. Elimine as duplicatas da entrada antes do UPSERT.</p>
 <p><strong>Como conferir seu resultado:</strong> quatro contatos, ids 1, 2, 3 e 9; cliente 3 se chama Carla Nova; cliente 2 tem email NULL; nomes e emails tratados. A segunda execu&#231;&#227;o mant&#233;m o mesmo conte&#250;do, mesmo que o comando reporte atualiza&#231;&#245;es.</p>
 <h3 id="N2-1.6">N2-1.6 — Reserva condicional sem saldo negativo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> chegaram duas solicita&#231;&#245;es de oito unidades para um dep&#243;sito que tem apenas dez. A segunda solicita&#231;&#227;o n&#227;o pode ser aceita depois que a primeira consumir o estoque dispon&#237;vel.</p>
 <p><strong>Seu objetivo:</strong> colocar a condi&#231;&#227;o de disponibilidade dentro da pr&#243;pria altera&#231;&#227;o e interpretar uma tentativa que afeta zero linhas.</p>
 <p><strong>Dados de partida:</strong> produto 1 no dep&#243;sito A com saldo 10. As duas tentativas ser&#227;o sequenciais na mesma sess&#227;o, para facilitar a observa&#231;&#227;o.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Abra BEGIN e execute um UPDATE que subtraia oito somente quando saldo &gt;= 8. Use RETURNING para mostrar o saldo restante.</li>
 <li>Ainda sem encerrar a transa&#231;&#227;o, execute exatamente o mesmo comando novamente.</li>
 <li>Compare as sa&#237;das: uma lista vazia significa que o filtro n&#227;o encontrou saldo suficiente, n&#227;o que ocorreu erro SQL.</li>
 <li>Execute ROLLBACK e confirme que A voltou a 10.</li>
 <li>Explique o risco de fazer primeiro SELECT do saldo e, depois, um UPDATE sem a condi&#231;&#227;o de disponibilidade.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> a condi&#231;&#227;o deve estar no WHERE do UPDATE. Este teste ensina a regra de altera&#231;&#227;o condicional; como h&#225; somente uma sess&#227;o, ele n&#227;o demonstra todos os efeitos de concorr&#234;ncia de uma aplica&#231;&#227;o real.</p>
 <p><strong>Como conferir seu resultado:</strong> primeira tentativa retorna saldo 2; a segunda afeta zero linhas; depois do ROLLBACK, saldo 10.</p>
 <h2 id="N2-2">N2-2 — Filtros, NULL, texto e limites de datas</h2>
@@ -272,80 +267,74 @@ ORDER BY nome;
 <p><strong>Situa&#231;&#227;o:</strong> a equipe comercial vai enviar uma campanha apenas para clientes ativos do Paran&#225; e de S&#227;o Paulo. Antes, precisa identificar quem n&#227;o tem email utiliz&#225;vel. Alguns cadastros t&#234;m NULL; outros t&#234;m somente espa&#231;os, que visualmente parecem um campo vazio.</p>
 <p><strong>Seu objetivo:</strong> montar a lista de pessoas que precisam atualizar o contato, obedecendo &#224;s tr&#234;s condi&#231;&#245;es ao mesmo tempo.</p>
 <p><strong>Dados de partida:</strong> use clientes. Preserve o email original para mostrar o problema, sem corrigir o cadastro com UPDATE.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Consulte id, nome, ativo, UF e email de todos os clientes.</li>
 <li>Escreva uma condi&#231;&#227;o para ativo e outra para UF em PR ou SP. Use par&#234;nteses para deixar a combina&#231;&#227;o clara.</li>
 <li>Trate o email apenas na express&#227;o do filtro: remova espa&#231;os das pontas e converta texto vazio em NULL.</li>
 <li>Mostre id, nome, UF e email original de quem atende &#224;s tr&#234;s condi&#231;&#245;es.</li>
 <li>Compare com a vers&#227;o que testa somente email IS NULL e explique quem ficaria de fora incorretamente.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> NULLIF(btrim(email),&#39;&#39;) permite reconhecer tanto aus&#234;ncia quanto texto preenchido s&#243; com espa&#231;os. Um email com espa&#231;os nas pontas e conte&#250;do no meio n&#227;o est&#225; ausente.</p>
 <p><strong>Como conferir seu resultado:</strong> apenas Diego, id 4. Ana n&#227;o entra: seu email tem espa&#231;os, mas n&#227;o &#233; vazio.</p>
 <h3 id="N2-2.2">N2-2.2 — Desconhecido, zero e positivo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o financeiro recebeu a pergunta: quantos pedidos tiveram desconto? O cadastro, por&#233;m, distingue desconto confirmado como zero, desconto positivo e desconto ainda desconhecido. Misturar desconhecido com zero esconderia pend&#234;ncias de preenchimento.</p>
 <p><strong>Seu objetivo:</strong> construir um resumo de qualidade do cadastro de descontos sem perder essa distin&#231;&#227;o.</p>
 <p><strong>Dados de partida:</strong> considere os 12 pedidos, inclusive cancelados. Aqui voc&#234; analisa preenchimento, n&#227;o receita.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Consulte id e desconto para reconhecer os tr&#234;s casos nos dados.</li>
 <li>Em uma &#250;nica consulta, conte separadamente desconto IS NULL, desconto = 0 e desconto &gt; 0.</li>
 <li>Confira se a soma das tr&#234;s contagens corresponde ao total de pedidos.</li>
 <li>Acrescente SUM(desconto) e SUM(COALESCE(desconto,0)). Compare os n&#250;meros e explique por que uma soma igual n&#227;o prova que NULL e zero significam a mesma coisa.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> COUNT(*) FILTER (WHERE condi&#231;&#227;o) conta somente as linhas daquela condi&#231;&#227;o sem exigir tr&#234;s consultas. SUM ignora NULL; COALESCE fornece um valor substituto para a express&#227;o, sem alterar o cadastro.</p>
 <p><strong>Como conferir seu resultado:</strong> desconhecidos=3, zero=6, positivos=3; soma de descontos=40. Os tr&#234;s grupos cobrem os 12 pedidos.</p>
 <h3 id="N2-2.3">N2-2.3 — Mar&#231;o no hor&#225;rio de S&#227;o Paulo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o sistema grava instantes de acesso, mas o relat&#243;rio mensal da loja segue o hor&#225;rio de S&#227;o Paulo. Um acesso registrado &#224;s 02:59:59 UTC de 1&#186; de mar&#231;o ainda pertence a fevereiro em S&#227;o Paulo. Cortar o m&#234;s pelo calend&#225;rio UTC gera um relat&#243;rio errado.</p>
 <p><strong>Seu objetivo:</strong> encontrar os acessos de mar&#231;o segundo o fuso do neg&#243;cio e manter a resposta ao mudar o fuso de apresenta&#231;&#227;o da sess&#227;o.</p>
 <p><strong>Dados de partida:</strong> use acessos.ocorrido_em, que &#233; timestamptz. As quatro linhas foram colocadas perto das fronteiras de mar&#231;o justamente para revelar erros de limite.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Liste os instantes originais e uma coluna de apresenta&#231;&#227;o com ocorrido_em AT TIME ZONE &#39;America/Sao_Paulo&#39;.</li>
 <li>Transforme 01/03/2026 00:00 e 01/04/2026 00:00 de S&#227;o Paulo em limites timestamptz expl&#237;citos.</li>
 <li>Filtre a coluna original com &gt;= in&#237;cio e &lt; in&#237;cio do m&#234;s seguinte. N&#227;o inclua o primeiro instante de abril.</li>
 <li>Em uma transa&#231;&#227;o, use SET LOCAL TIME ZONE &#39;UTC&#39;, execute a consulta, depois mude para America/Sao_Paulo e repita.</li>
 <li>Termine com ROLLBACK para restaurar a configura&#231;&#227;o e explique por que os ids devem ser iguais nas duas execu&#231;&#245;es.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> TIMESTAMP &#39;2026-03-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39; interpreta aquele hor&#225;rio de parede no fuso indicado. J&#225; aplicar AT TIME ZONE a ocorrido_em serve para apresent&#225;-lo como hor&#225;rio local. BETWEEN inclui os dois extremos; aqui o extremo final deve ficar de fora.</p>
 <p><strong>Como conferir seu resultado:</strong> ids 2 e 3 nas duas execu&#231;&#245;es. O id 1 ainda &#233; fevereiro local; o 4 j&#225; &#233; abril local. Explique o risco de usar BETWEEN com o primeiro instante do m&#234;s seguinte e de converter a coluna para date para filtrar sem considerar o fuso.</p>
 <h3 id="N2-2.4">N2-2.4 — Faixas de pre&#231;o sem buracos</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o cat&#225;logo precisa exibir uma faixa de pre&#231;o ao lado de cada produto. O comercial definiu baixo abaixo de 100, medio de 100 a 500 inclusive e alto acima de 500. Se os limites forem escritos de maneira inconsistente, um produto pode ficar sem faixa ou ser classificado na faixa errada.</p>
 <p><strong>Seu objetivo:</strong> escrever uma classifica&#231;&#227;o &#250;nica e provar seu comportamento nas fronteiras.</p>
 <p><strong>Dados de partida:</strong> use os seis produtos. O cat&#225;logo cont&#233;m pre&#231;o 500, mas n&#227;o cont&#233;m 100; por isso, voc&#234; vai criar valores de teste somente na consulta.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Fa&#231;a uma listagem com id, nome, preco e uma coluna faixa calculada com CASE.</li>
 <li>Use essa classifica&#231;&#227;o em uma CTE para contar produtos por faixa.</li>
 <li>Crie duas linhas tempor&#225;rias de consulta com VALUES (100),(500) e aplique o mesmo CASE.</li>
 <li>Explique por que a ordem dos WHEN importa e como voc&#234; garantiu que todo pre&#231;o permitido receba uma classifica&#231;&#227;o.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> CASE avalia os WHEN na ordem e para no primeiro verdadeiro. Depois de separar preco &lt; 100, um segundo teste preco &lt;= 500 j&#225; cobre a faixa intermedi&#225;ria. VALUES cria linhas na consulta; n&#227;o insere produtos na tabela.</p>
 <p><strong>Como conferir seu resultado:</strong> baixo=2, medio=3, alto=1; 100 e 500 s&#227;o medio.</p>
 <h3 id="N2-2.5">N2-2.5 — NULL na compara&#231;&#227;o</h3>
 <p><strong>Situa&#231;&#227;o:</strong> duas pessoas entregaram listas diferentes de pedidos com desconto diferente de zero. Uma usou &lt;&gt; 0; outra, IS DISTINCT FROM 0. O gestor quer entender se algu&#233;m errou ou se os filtros respondem perguntas diferentes.</p>
 <p><strong>Seu objetivo:</strong> mostrar a diferen&#231;a com os ids dos pedidos e explicar o tratamento da aus&#234;ncia de informa&#231;&#227;o.</p>
 <p><strong>Dados de partida:</strong> consulte pedidos, sem alterar os descontos. A carga aceita desconto NULL e n&#227;o aceita desconto negativo.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Liste os ids e descontos encontrados por desconto &lt;&gt; 0.</li>
 <li>Repita com desconto IS DISTINCT FROM 0.</li>
 <li>Use EXCEPT para obter os ids da segunda consulta que n&#227;o aparecem na primeira. Confira o desconto original desses pedidos.</li>
 <li>Escreva duas frases: qual filtro responde desconto positivo nesta carga e qual responde qualquer diferen&#231;a em rela&#231;&#227;o a zero, incluindo aus&#234;ncia.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> uma compara&#231;&#227;o comum com NULL produz resultado desconhecido e n&#227;o passa no WHERE. IS DISTINCT FROM permite comparar aus&#234;ncia como um caso distinto. EXCEPT devolve o que est&#225; no primeiro resultado e n&#227;o no segundo.</p>
 <p><strong>Como conferir seu resultado:</strong> &lt;&gt; retorna 101,104,107; IS DISTINCT FROM acrescenta 102,105,108. N&#227;o trate a segunda lista como prova de que o desconto &#233; positivo.</p>
 <h3 id="N2-2.6">N2-2.6 — Caracteres literais em padr&#245;es</h3>
 <p><strong>Situa&#231;&#227;o:</strong> um atendente procura um cabo cujo nome cont&#233;m os s&#237;mbolos _ e %. Ele digitou um padr&#227;o LIKE e recebeu todos os produtos, porque esses caracteres tamb&#233;m t&#234;m significado especial na busca.</p>
 <p><strong>Seu objetivo:</strong> distinguir procurar um s&#237;mbolo literal de usar um s&#237;mbolo como regra de correspond&#234;ncia.</p>
 <p><strong>Dados de partida:</strong> o produto 6 se chama Cabo_100%. Voc&#234; vai pesquisar nomes em produtos, sem alterar nenhum deles.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Liste os nomes e teste LIKE &#39;%_%&#39;. Observe a quantidade de resultados.</li>
 <li>Escolha ! como caractere de escape com ESCAPE &#39;!&#39;. Escreva uma busca por % literal em qualquer posi&#231;&#227;o.</li>
 <li>Escreva outra busca por _ literal, tamb&#233;m em qualquer posi&#231;&#227;o.</li>
 <li>Compare as tr&#234;s listas e explique por que a primeira &#233; mais abrangente.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> no LIKE, % significa qualquer sequ&#234;ncia de caracteres e _ significa um caractere. Com ESCAPE &#39;!&#39;, um ! antes desses s&#237;mbolos manda trat&#225;-los literalmente. Voc&#234; ainda pode usar os outros % do padr&#227;o como curingas nas pontas.</p>
 <p><strong>Como conferir seu resultado:</strong> as buscas literais retornam somente Cabo_100%, id 6; o padr&#227;o sem escape retorna os seis produtos.</p>
 <h2 id="N2-3">N2-3 — Relat&#243;rios financeiros e fun&#231;&#245;es de janela</h2>
@@ -355,84 +344,78 @@ ORDER BY nome;
 <p><strong>Situa&#231;&#227;o:</strong> a dire&#231;&#227;o quer um gr&#225;fico de receita contratada de janeiro a junho. Se maio e junho desaparecerem porque n&#227;o tiveram pedidos, o gr&#225;fico parecer&#225; incompleto. Al&#233;m disso, venda cancelada n&#227;o deve aumentar o resultado.</p>
 <p><strong>Seu objetivo:</strong> entregar seis linhas mensais, incluindo meses sem movimento, com a mesma regra financeira em todos os meses.</p>
 <p><strong>Dados de partida:</strong> use pedidos e a data do pedido. Receita contratada &#233; valor_total menos desconto, tratando desconto desconhecido como zero para este relat&#243;rio. Ainda n&#227;o use pagamentos: dinheiro recebido ser&#225; analisado depois.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Filtre os pedidos n&#227;o cancelados e calcule o l&#237;quido de cada um.</li>
 <li>Agrupe os valores pelo primeiro dia do m&#234;s de data_pedido.</li>
 <li>Em outra CTE, gere todos os meses de janeiro a junho, mesmo os que n&#227;o aparecem nas vendas.</li>
 <li>Parta desse calend&#225;rio e ligue os totais com LEFT JOIN. Mostre zero quando n&#227;o existir total para o m&#234;s.</li>
 <li>Ordene por m&#234;s e confira a soma do per&#237;odo.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> date_trunc(&#39;month&#39;, data_pedido) re&#250;ne datas do mesmo m&#234;s. generate_series com intervalo de um m&#234;s fornece o calend&#225;rio. Chama-se compet&#234;ncia, neste exerc&#237;cio, atribuir a venda ao m&#234;s do pedido, independentemente do recebimento.</p>
 <p><strong>Como conferir seu resultado:</strong> janeiro=1290; fevereiro=980; mar&#231;o=540; abril=250; maio=0; junho=0. Total=3060.</p>
 <h3 id="N2-3.2">N2-3.2 — Posi&#231;&#227;o financeira por pedido</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o financeiro precisa saber quais pedidos est&#227;o quitados e quais ainda t&#234;m saldo. O status cadastrado n&#227;o basta: h&#225; recebimentos parciais, estorno e at&#233; cliente que pagou a mais.</p>
 <p><strong>Seu objetivo:</strong> calcular a posi&#231;&#227;o financeira de cada venda sem contar um pedido v&#225;rias vezes por ele ter v&#225;rios pagamentos.</p>
 <p><strong>Dados de partida:</strong> use pedidos e pagamentos; deixe itens fora desta consulta. Observe primeiro os pedidos 101, 104 e 112 para ver, respectivamente, dois recebimentos, um estorno e um cr&#233;dito.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Em pagamentos, transforme recebimento em valor positivo e estorno em valor negativo. Some por pedido_id, produzindo uma linha por pedido.</li>
 <li>Ligue esse resumo aos pedidos n&#227;o cancelados com LEFT JOIN. Sem pagamento, o recebido deve ser zero.</li>
 <li>Calcule contratado l&#237;quido, recebido l&#237;quido e saldo = contratado - recebido.</li>
 <li>Classifique saldo positivo como a_receber, zero como quitado e negativo como credito.</li>
 <li>Confira os totais de contratado, recebido, saldo assinado, d&#237;vidas positivas e cr&#233;ditos separados.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> imagine a tabela intermedi&#225;ria com apenas pedido_id e recebido. Essa etapa evita que os v&#225;rios pagamentos multipliquem o valor do cabe&#231;alho. Um saldo de -20 representa cr&#233;dito de 20, n&#227;o uma d&#237;vida negativa a esconder.</p>
 <p><strong>Como conferir seu resultado:</strong> dez pedidos; contratado=3060, recebido=2730, saldo assinado=330. A receber positivo=350 e cr&#233;dito=20. Pedido 112 tem saldo -20; 104 tem recebido 480 e saldo zero.</p>
 <h3 id="N2-3.3">N2-3.3 — Dois maiores clientes de cada m&#234;s</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a &#225;rea comercial quer destacar os dois clientes que mais contrataram em cada m&#234;s. Ordenar todas as vendas do semestre e aplicar LIMIT 2 escolheria somente dois clientes do per&#237;odo inteiro.</p>
 <p><strong>Seu objetivo:</strong> construir um ranking independente dentro de cada m&#234;s e aplicar um desempate reproduz&#237;vel.</p>
 <p><strong>Dados de partida:</strong> use o l&#237;quido contratado dos pedidos n&#227;o cancelados. N&#227;o some pagamentos: o ranking mede vendas, e n&#227;o recebimentos.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Produza uma linha por m&#234;s e cliente com a soma do l&#237;quido contratado.</li>
 <li>Sobre esse resumo, numere as linhas dentro de cada m&#234;s, do maior total para o menor. Em empate, use cliente_id crescente.</li>
 <li>Em uma consulta externa, mantenha somente as posi&#231;&#245;es 1 e 2.</li>
 <li>Mostre m&#234;s, cliente_id, total e posi&#231;&#227;o; confira especialmente mar&#231;o, quando h&#225; tr&#234;s clientes com vendas.</li>
 <li>Explique como voc&#234; mudaria a regra para incluir todos os clientes empatados entre os dois maiores valores, usando DENSE_RANK somente pelo total.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> PARTITION BY mes reinicia a numera&#231;&#227;o a cada m&#234;s. Fa&#231;a a soma antes da janela: primeiro voc&#234; constr&#243;i a pontua&#231;&#227;o de cada cliente, depois atribui sua posi&#231;&#227;o.</p>
 <p><strong>Como conferir seu resultado:</strong> janeiro: (1,1140),(2,150); fevereiro: (4,500),(3,480); mar&#231;o: (6,300),(5,190); abril: (5,150),(3,100). O cliente 1 fica fora do top 2 de mar&#231;o.</p>
 <h3 id="N2-3.4">N2-3.4 — Acumulado e varia&#231;&#227;o mensal</h3>
 <p><strong>Situa&#231;&#227;o:</strong> depois de receber os totais mensais, a dire&#231;&#227;o perguntou quanto a loja acumulou at&#233; cada m&#234;s e quanto cresceu em rela&#231;&#227;o ao m&#234;s anterior. Maio e junho sem vendas tamb&#233;m precisam aparecer, pois fazem parte da an&#225;lise.</p>
 <p><strong>Seu objetivo:</strong> acrescentar medidas de evolu&#231;&#227;o ao relat&#243;rio de N2-3.1 sem perder suas seis linhas.</p>
 <p><strong>Dados de partida:</strong> reaproveite a receita mensal de janeiro a junho j&#225; conferida. O primeiro m&#234;s n&#227;o tem refer&#234;ncia anterior; junho tem m&#234;s anterior com receita zero.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Deixe pronta uma CTE com mes e liquido, incluindo os zeros de maio e junho.</li>
 <li>Acrescente o acumulado com SUM OVER em ordem de m&#234;s, usando a moldura ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW.</li>
 <li>Use LAG para trazer o l&#237;quido da linha anterior.</li>
 <li>Calcule 100 &#215; (atual - anterior) / anterior. Se o anterior for zero ou n&#227;o existir, retorne NULL.</li>
 <li>Arredonde a porcentagem para duas casas apenas no resultado final. Explique o que NULL significa no primeiro m&#234;s e em junho.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> SUM OVER calcula sem agrupar novamente as linhas. LAG consulta a linha anterior na ordem definida. NULLIF(anterior,0) &#233; uma forma de evitar divis&#227;o por zero; n&#227;o invente uma taxa de crescimento para esse caso.</p>
 <p><strong>Como conferir seu resultado:</strong> acumulados=1290,2270,2810,3060,3060,3060; maio varia -100%; junho tem varia&#231;&#227;o NULL. Use round(...,2) apenas na apresenta&#231;&#227;o.</p>
 <h3 id="N2-3.5">N2-3.5 — Recebimentos e estornos separados</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a dire&#231;&#227;o comparou receita contratada com o extrato de recebimentos e encontrou n&#250;meros diferentes. O caixa registra quando o pagamento aconteceu e precisa separar dinheiro que entrou de valores devolvidos.</p>
 <p><strong>Seu objetivo:</strong> produzir uma vis&#227;o mensal de caixa e explicar sua diferen&#231;a para o relat&#243;rio de vendas.</p>
 <p><strong>Dados de partida:</strong> use pagamentos ligados a pedidos n&#227;o cancelados. Agora o m&#234;s &#233; o de data_pagamento, n&#227;o o de data_pedido. Estornos foram armazenados como valores positivos com tipo pr&#243;prio.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Por m&#234;s de pagamento, some separadamente recebimentos e estornos, usando FILTER ou CASE.</li>
 <li>Calcule recebido l&#237;quido = recebimentos - estornos.</li>
 <li>Calcule percentual estornado = 100 &#215; estornos / recebimentos, protegendo o denominador zero.</li>
 <li>Ligue o resumo a um calend&#225;rio de janeiro a junho para preservar os meses vazios.</li>
 <li>Compare os totais com N2-3.1. Use fevereiro para explicar a devolu&#231;&#227;o e cite pagamentos parciais e cr&#233;dito como motivos de diferen&#231;a nesta carga.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> o pagamento de 500 e o estorno de 20 do pedido 104 n&#227;o s&#227;o duas entradas de caixa. Um &#233; entrada e o outro &#233; devolu&#231;&#227;o. Em meses sem recebimento, mostre l&#237;quido zero e percentual NULL.</p>
 <p><strong>Como conferir seu resultado:</strong> l&#237;quidos por m&#234;s=1190,780,490,270,0,0; fevereiro tem bruto 800, estorno 20 e percentual 2,50%; total l&#237;quido=2730. Nesta carga, datas de recebimento permanecem no m&#234;s do pedido, mas h&#225; pagamentos parciais e cr&#233;ditos.</p>
 <h3 id="N2-3.6">N2-3.6 — Cobran&#231;a sem compensa&#231;&#227;o indevida</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a equipe de cobran&#231;a quer saber quem precisa ser contatado. O cr&#233;dito de uma venda n&#227;o deve apagar automaticamente a d&#237;vida de outra no relat&#243;rio operacional; uma compensa&#231;&#227;o dependeria de uma regra espec&#237;fica da empresa.</p>
 <p><strong>Seu objetivo:</strong> separar o que cada cliente deve do que tem de cr&#233;dito, classificando primeiro os saldos de cada pedido.</p>
 <p><strong>Dados de partida:</strong> reaproveite a posi&#231;&#227;o por pedido de N2-3.2, mantendo cliente_id. Use apenas vendas n&#227;o canceladas.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Para cada pedido, calcule a_receber como o saldo positivo, ou zero se ele n&#227;o for positivo.</li>
 <li>Calcule credito como o m&#243;dulo do saldo negativo, ou zero nos demais casos.</li>
 <li>Some as duas medidas por cliente_id, sem compens&#225;-las antes.</li>
 <li>Mostre somente clientes cuja soma a_receber seja maior que zero.</li>
 <li>Remova temporariamente esse &#250;ltimo filtro para encontrar o cr&#233;dito do cliente 3. Explique por que um saldo global assinado responde outra pergunta.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> GREATEST(saldo,0) mant&#233;m a d&#237;vida positiva; GREATEST(-saldo,0) transforma somente cr&#233;dito em valor positivo. HAVING filtra o total do cliente depois do agrupamento.</p>
 <p><strong>Como conferir seu resultado:</strong> clientes 1=50, 2=100 e 4=200 a receber. Em uma consulta complementar sem HAVING, cliente 3 tem cr&#233;dito=20. Explique por que SUM(saldo) e SUM(GREATEST(saldo,0)) respondem perguntas diferentes.</p>
 <h2 id="N2-4">N2-4 — Cardinalidade, aus&#234;ncia e reconcilia&#231;&#227;o</h2>
@@ -442,84 +425,78 @@ ORDER BY nome;
 <p><strong>Situa&#231;&#227;o:</strong> a equipe de relacionamento quer um relat&#243;rio da carteira inteira. A consulta atual mostra apenas quem comprou, fazendo clientes sem movimento desaparecerem. Para planejar uma campanha, essas pessoas tamb&#233;m precisam constar.</p>
 <p><strong>Seu objetivo:</strong> produzir uma linha por cliente, mesmo quando ele n&#227;o tem pedido v&#225;lido para o relat&#243;rio.</p>
 <p><strong>Dados de partida:</strong> h&#225; oito clientes. Conte somente pedidos n&#227;o cancelados e some seu l&#237;quido contratado. Para quem n&#227;o tiver venda eleg&#237;vel, mostre contagem e valor zero.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Comece por clientes, a popula&#231;&#227;o que precisa ser preservada.</li>
 <li>Acrescente os pedidos com LEFT JOIN, colocando a condi&#231;&#227;o de status no ON ou em uma CTE que filtra pedidos antes da jun&#231;&#227;o.</li>
 <li>Agrupe por cliente e conte uma coluna do pedido que n&#227;o seja NULL quando ele existe. Some o l&#237;quido e trate a aus&#234;ncia de soma com COALESCE.</li>
 <li>Confira que o resultado continua com oito clientes.</li>
 <li>Em uma c&#243;pia da consulta, mova o filtro de status para o WHERE. Observe quem desaparece e explique o efeito.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> quando n&#227;o h&#225; pedido, LEFT JOIN preserva o cliente com colunas do pedido NULL. COUNT(*) contaria essa linha preservada; COUNT(p.id) conta somente pedidos encontrados.</p>
 <p><strong>Como conferir seu resultado:</strong> Gabriela e Hugo aparecem com zero; total global contratado=3060 e quantidade=10.</p>
 <h3 id="N2-4.2">N2-4.2 — Anti-join resistente a NULL</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o marketing precisa localizar pessoas que nunca tiveram uma compra n&#227;o cancelada. Uma lista de exclus&#227;o recebida de outra equipe tamb&#233;m pode conter um campo vazio. Voc&#234; precisa garantir que esse NULL n&#227;o fa&#231;a todos os clientes sumirem da consulta.</p>
 <p><strong>Seu objetivo:</strong> aprender a perguntar se uma correspond&#234;ncia existe e comparar isso com uma lista que cont&#233;m NULL.</p>
 <p><strong>Dados de partida:</strong> primeiro use clientes e pedidos. Depois use a lista de teste VALUES (2),(NULL::integer), que representa cliente 2 bloqueado e uma entrada sem id.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Para cada cliente, pergunte com NOT EXISTS se n&#227;o h&#225; pedido n&#227;o cancelado associado a ele.</li>
 <li>Mostre os ids e nomes encontrados.</li>
 <li>Em um teste separado, selecione clientes cujo id NOT IN a lista de exclus&#227;o com NULL.</li>
 <li>Repita a exclus&#227;o usando NOT EXISTS e uma compara&#231;&#227;o de igualdade entre os ids.</li>
 <li>Compare a quantidade de resultados e explique por que uma lista com NULL exige cuidado.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> a subconsulta de NOT EXISTS pode come&#231;ar com SELECT 1; o interesse &#233; haver uma linha correspondente, n&#227;o seu conte&#250;do. O teste com lista &#233; uma simula&#231;&#227;o de consulta e n&#227;o altera nenhum cadastro.</p>
 <p><strong>Como conferir seu resultado:</strong> sem pedidos eleg&#237;veis: 7 e 8; exclus&#227;o da lista com NOT IN retorna zero clientes; com NOT EXISTS retorna sete, todos exceto 2.</p>
 <h3 id="N2-4.3">N2-4.3 — Investigar uma soma inflada</h3>
 <p><strong>Situa&#231;&#227;o:</strong> um relat&#243;rio diz que o pedido 101 vendeu 500 e recebeu 480. Ao abrir a venda, voc&#234; v&#234; que ela tem apenas dois itens totalizando 250 e dois recebimentos totalizando 240. O erro pode estar na consulta, e n&#227;o nos dados.</p>
 <p><strong>Seu objetivo:</strong> localizar em que etapa as linhas se multiplicaram e corrigir o c&#225;lculo sem apagar valores repetidos leg&#237;timos.</p>
 <p><strong>Dados de partida:</strong> o pedido 101 tem duas linhas em itens e duas em pagamentos. O cabe&#231;alho registra bruto 250 e desconto 10.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Fa&#231;a a jun&#231;&#227;o direta de pedidos, itens e pagamentos filtrando o pedido 101. Antes de somar, exiba produto_id e id do pagamento em cada linha.</li>
 <li>Conte as combina&#231;&#245;es: quantas vezes cada item e cada recebimento aparece?</li>
 <li>Some os subtotais e os pagamentos nessa jun&#231;&#227;o para reproduzir os n&#250;meros incorretos.</li>
 <li>Refa&#231;a com duas CTEs: uma soma itens por pedido, outra soma pagamentos por pedido com sinal do estorno.</li>
 <li>Ligue os dois resumos ao cabe&#231;alho. Compare bruto dos itens, contratado ap&#243;s desconto e recebido.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> duas rela&#231;&#245;es de um para muitos podem formar 2 &#215; 2 combina&#231;&#245;es. A corre&#231;&#227;o &#233; levar cada origem &#224; mesma unidade de an&#225;lise, aqui uma linha por pedido, antes de junt&#225;-las. SUM(DISTINCT valor) tamb&#233;m descartaria valores iguais de opera&#231;&#245;es diferentes.</p>
 <p><strong>Como conferir seu resultado:</strong> jun&#231;&#227;o ing&#234;nua produz quatro linhas, subtotal inflado=500 e recebido inflado=480. A vers&#227;o correta retorna bruto dos itens=250, recebido=240 e l&#237;quido contratado=240. Valores diferentes aqui podem representar desconto, n&#227;o erro de cadastro.</p>
 <h3 id="N2-4.4">N2-4.4 — &#218;ltimo pedido sem perder clientes</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o atendimento quer ver a &#250;ltima intera&#231;&#227;o comercial de cada cliente. Mesmo quem nunca pediu precisa aparecer. Um pedido cancelado tamb&#233;m conta como intera&#231;&#227;o para esta tela, embora n&#227;o conte como receita.</p>
 <p><strong>Seu objetivo:</strong> escolher apenas o pedido mais recente de cada pessoa, com uma regra expl&#237;cita de desempate.</p>
 <p><strong>Dados de partida:</strong> use todos os pedidos, inclusive cancelados. A ordem &#233; data_pedido decrescente e, para datas iguais, id decrescente.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Comece por clientes. Para cada um, procure seu pedido em ordem de rec&#234;ncia e mantenha somente o primeiro.</li>
 <li>Implemente essa busca com LEFT JOIN LATERAL e LIMIT 1; preserve os clientes sem resultado.</li>
 <li>Entregue cliente_id, pedido_id e data_pedido, ordenados por cliente.</li>
 <li>Crie uma segunda vers&#227;o: numere os pedidos por cliente com ROW_NUMBER e ligue somente a posi&#231;&#227;o 1 ao cadastro.</li>
 <li>Compare as vers&#245;es com EXCEPT nas duas dire&#231;&#245;es; o resultado da compara&#231;&#227;o deve ser vazio.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> LATERAL permite que a consulta &#224; direita use o id do cliente da linha &#224; esquerda. Na vers&#227;o com janela, o filtro de posi&#231;&#227;o deve preservar o LEFT JOIN. Retire ORDER BY das consultas internas da compara&#231;&#227;o por conjuntos.</p>
 <p><strong>Como conferir seu resultado:</strong> ids dos &#250;ltimos pedidos dos clientes 1 a 6: 108,103,112,111,110,109; clientes 7 e 8 ficam com NULL. As vers&#245;es devem retornar o mesmo conjunto.</p>
 <h3 id="N2-4.5">N2-4.5 — Auditoria com registros ausentes dos dois lados</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a contabilidade recebe dois arquivos: um com o total informado no cabe&#231;alho das vendas e outro com os totais calculados pelos itens. Al&#233;m de valores diferentes, pode faltar um pedido em qualquer dos arquivos. Comparar s&#243; os registros presentes nos dois esconderia parte dos problemas.</p>
 <p><strong>Seu objetivo:</strong> gerar uma lista &#250;nica de diverg&#234;ncias, distinguindo valor incorreto de registro ausente.</p>
 <p><strong>Dados de partida:</strong> simule os arquivos em CTEs. N&#227;o altere as tabelas reais. O valor comparado aqui &#233; bruto, sem desconto.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Crie cabecalhos a partir de pedidos, deixando o 111 de fora e acrescentando 1 ao valor_total do 101 apenas no SELECT.</li>
 <li>Crie totais_itens somando quantidade &#215; preco_unitario por pedido, mas deixando o 112 de fora.</li>
 <li>Fa&#231;a FULL JOIN pelo id do pedido para preservar registros encontrados em qualquer lado.</li>
 <li>Mostre o id dispon&#237;vel com COALESCE, o total de cada fonte e o motivo: somente_itens, somente_cabecalho ou valor_divergente.</li>
 <li>Mantenha somente diverg&#234;ncias e explique quais seriam perdidas com INNER JOIN.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> a coluna-chave NULL de um dos lados indica aus&#234;ncia naquela fonte. IS DISTINCT FROM compara os totais incluindo casos com NULL; uma compara&#231;&#227;o comum &lt;&gt; n&#227;o resolve sozinha esses casos.</p>
 <p><strong>Como conferir seu resultado:</strong> tr&#234;s ocorr&#234;ncias: 101 com diferen&#231;a de 1; 111 somente nos itens; 112 somente no cabe&#231;alho. Uma jun&#231;&#227;o interna esconderia os dois registros ausentes.</p>
 <h3 id="N2-4.6">N2-4.6 — Pre&#231;o hist&#243;rico versus pre&#231;o atual</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o cat&#225;logo aumentou o pre&#231;o do Mouse. O comercial quer simular quanto os itens de uma venda antiga custariam hoje, enquanto a contabilidade precisa manter o valor que foi vendido na &#233;poca. Usar sempre o pre&#231;o atual reescreveria a hist&#243;ria do faturamento.</p>
 <p><strong>Seu objetivo:</strong> distinguir o pre&#231;o hist&#243;rico do item do pre&#231;o atual do produto, observando o efeito de uma altera&#231;&#227;o controlada.</p>
 <p><strong>Dados de partida:</strong> use o pedido 101. Nele h&#225; duas unidades de Mouse com pre&#231;o hist&#243;rico 50 e um Teclado de 150. O Mouse custa 50 tamb&#233;m no cat&#225;logo inicial.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Abra BEGIN. Fa&#231;a uma consulta com duas somas: quantidade &#215; pre&#231;o do item e quantidade &#215; pre&#231;o do cadastro de produtos.</li>
 <li>Altere somente produtos.preco do Mouse para 60. N&#227;o altere itens.</li>
 <li>Repita as duas somas e explique por que uma mudou e outra permaneceu igual.</li>
 <li>Termine com ROLLBACK e confira que o pre&#231;o atual do Mouse voltou a 50.</li>
 <li>Escreva qual coluna usaria para receita hist&#243;rica e qual para uma simula&#231;&#227;o comercial aos pre&#231;os de hoje.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> a jun&#231;&#227;o liga itens.produto_id a produtos.id. Use aliases para nomear claramente preco_historico e preco_atual nas express&#245;es e evitar a troca acidental de origem.</p>
 <p><strong>Como conferir seu resultado:</strong> antes, ambos=250; depois, hist&#243;rico=250 e cadastro atual=270; ap&#243;s ROLLBACK, pre&#231;o do Mouse=50. N&#227;o reescreva o pre&#231;o dos itens.</p>
 <h2 id="N2-5">N2-5 — Desempenho orientado por hip&#243;teses</h2>
@@ -530,85 +507,79 @@ ORDER BY nome;
 <p><strong>Situa&#231;&#227;o:</strong> a aplica&#231;&#227;o consulta os eventos de um cliente em um per&#237;odo. Antes de criar &#237;ndices, voc&#234; precisa descobrir quanto trabalho o PostgreSQL faz hoje. Sem essa refer&#234;ncia, n&#227;o h&#225; compara&#231;&#227;o confi&#225;vel para dizer se uma mudan&#231;a ajudou.</p>
 <p><strong>Seu objetivo:</strong> registrar a linha de base e observar como a quantidade de linhas solicitada influencia o plano.</p>
 <p><strong>Dados de partida:</strong> execute 02_Preparacao_Desempenho.sql uma vez. eventos deve ter 300 mil linhas e nenhum &#237;ndice. As datas desta etapa s&#227;o de 2026 e os extremos do BETWEEN s&#227;o inclusivos.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Confira a aus&#234;ncia de &#237;ndices em pg_indexes. Registre vers&#227;o do servidor, tamanhos de tabela/&#237;ndices e recursos da VM; execute ANALYZE.</li>
 <li>Escreva tr&#234;s SELECT *: cliente 42 entre 1&#186; de mar&#231;o e 10 de abril; somente esse per&#237;odo, sem cliente; tabela inteira.</li>
 <li>Acrescente EXPLAIN (ANALYZE, BUFFERS) a cada consulta. Execute cada uma tr&#234;s vezes, salvando os nove planos antes de qualquer &#237;ndice.</li>
 <li>Na tabela de medi&#231;&#245;es ao final do roteiro, anote scan, linhas estimadas/reais, loops, buffers, planejamento e execu&#231;&#227;o.</li>
 <li>Compare a parcela da tabela retornada por cada filtro. Essa parcela &#233; sua seletividade: uma busca que retorna poucas linhas &#233; mais seletiva.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> EXPLAIN ANALYZE executa a consulta e devolve o plano com medidas. Se houver workers, leia tamb&#233;m Gather e loops; actual rows pode ser m&#233;dia por execu&#231;&#227;o do n&#243;. N&#227;o some buffers do pai e do filho: eles podem representar o mesmo trabalho. Use o mesmo n&#237;vel do plano para comparar etapas.</p>
 <p><strong>Como conferir seu resultado:</strong> filtro combinado=82 linhas; intervalo sem cliente=82000; tabela inteira=300000. Guarde os nove planos antes da cria&#231;&#227;o dos &#237;ndices.</p>
 <h3 id="N2-5.2">N2-5.2 — &#205;ndice composto e seu custo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a aplica&#231;&#227;o usa muito a busca por cliente e per&#237;odo. A equipe prop&#244;s um &#237;ndice nas duas colunas, mas quer saber se ele tamb&#233;m ajuda uma consulta s&#243; por data e se vale a pena para exportar a tabela inteira.</p>
 <p><strong>Seu objetivo:</strong> testar uma hip&#243;tese de &#237;ndice com as mesmas consultas da linha de base e contabilizar seu custo de armazenamento.</p>
 <p><strong>Dados de partida:</strong> preserve eventos como est&#225; ap&#243;s N2-5.1. N&#227;o recrie nem reorganize os dados. Voc&#234; precisa ter salvo os planos sem &#237;ndice.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Crie um &#237;ndice B-tree com cliente_id primeiro e data_evento depois. Escolha o nome n2_eventos_cliente_data_idx para acompanhar as solu&#231;&#245;es.</li>
 <li>Execute novamente cada uma das tr&#234;s consultas anteriores, tr&#234;s vezes, sem mudar filtros nem colunas do SELECT.</li>
 <li>Compare os planos novos com os anteriores: mudou o tipo de acesso? O trabalho em buffers diminuiu? A contagem retornada permaneceu igual?</li>
 <li>Consulte pg_relation_size para medir o espa&#231;o do &#237;ndice.</li>
 <li>Recomende em quais consultas esse &#237;ndice faz sentido e justifique o comportamento da busca s&#243; por data com o plano real.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> um &#237;ndice composto se parece com uma lista organizada por cliente e, dentro de cada cliente, por data. Ele pode reduzir o trabalho da busca seletiva, mas ler grande parte da tabela pode favorecer outra estrat&#233;gia. N&#227;o force o tipo de scan nem trate cost como tempo em milissegundos.</p>
 <p><strong>Como conferir seu resultado:</strong> resultados id&#234;nticos aos da linha de base; conclus&#227;o baseada em buffers, estimativas, linhas e custo de armazenamento, al&#233;m do tempo. N&#227;o confunda cost com milissegundos.</p>
 <h3 id="N2-5.3">N2-5.3 — &#205;ndice parcial para a fila pendente</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a opera&#231;&#227;o tem uma tela que exibe somente os primeiros 50 eventos pendentes de mar&#231;o. Pendentes s&#227;o uma pequena parte da tabela. A proposta &#233; indexar apenas essa fila, aproveitando tamb&#233;m a ordem usada na tela.</p>
 <p><strong>Seu objetivo:</strong> avaliar um &#237;ndice parcial e entender quais consultas ficam fora de sua cobertura.</p>
 <p><strong>Dados de partida:</strong> use eventos com o &#237;ndice composto da etapa anterior. A fila exige status=&#39;pendente&#39;, data &gt;= 01/03/2026 e &lt; 01/04/2026, ORDER BY data_evento,id e LIMIT 50.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Escreva a consulta da tela com SELECT * e me&#231;a tr&#234;s vezes antes do novo &#237;ndice.</li>
 <li>Em uma consulta de contagem separada, descubra quantos pendentes de mar&#231;o existem antes do LIMIT.</li>
 <li>Crie n2_eventos_pendentes_idx em (data_evento,id) com WHERE status=&#39;pendente&#39;. Repita as tr&#234;s medi&#231;&#245;es da tela sem mudar o SQL.</li>
 <li>Teste a mesma consulta trocando somente o status para pago. Explique por que os dados pagos n&#227;o est&#227;o nesse &#237;ndice parcial.</li>
 <li>Compare o tamanho do &#237;ndice parcial com o do composto e registre se o plano aproveitou filtro, ordena&#231;&#227;o e limite.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> o WHERE de CREATE INDEX determina quais linhas entram no &#237;ndice. Ele n&#227;o altera nem exclui linhas da tabela. ORDER BY e LIMIT fazem parte do problema: buscar todas as linhas e ordenar no cliente seria outro experimento.</p>
 <p><strong>Como conferir seu resultado:</strong> h&#225; 4000 pendentes em mar&#231;o antes do LIMIT; a busca limitada retorna 50 linhas. N&#227;o exija uso do &#237;ndice se o plano real justificar outra estrat&#233;gia. Sua conclus&#227;o deve distinguir predicado do &#237;ndice, ordena&#231;&#227;o e limite.</p>
 <h3 id="N2-5.4">N2-5.4 — &#205;ndice de express&#227;o</h3>
 <p><strong>Situa&#231;&#227;o:</strong> os emails dos eventos vieram em mai&#250;sculas, mas a aplica&#231;&#227;o recebe pesquisas em min&#250;sculas e usa lower(email) no filtro. Um &#237;ndice na coluna original organiza o texto original; a consulta trabalha com o resultado de uma fun&#231;&#227;o.</p>
 <p><strong>Seu objetivo:</strong> testar um &#237;ndice na express&#227;o realmente usada pela busca e provar que ele n&#227;o muda os registros encontrados.</p>
 <p><strong>Dados de partida:</strong> o email pesquisado &#233; cliente42@example.test. Use a tabela eventos e preserve os &#237;ndices j&#225; criados; ainda n&#227;o h&#225; &#237;ndice de express&#227;o.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Me&#231;a tr&#234;s vezes SELECT * filtrado por lower(email)=&#39;cliente42@example.test&#39;. Salve tamb&#233;m uma lista dos ids retornados em ordem.</li>
 <li>Crie n2_eventos_email_lower_idx sobre a express&#227;o lower(email), com os par&#234;nteses exigidos por CREATE INDEX.</li>
 <li>Execute ANALYZE e repita exatamente a mesma busca tr&#234;s vezes.</li>
 <li>Confira a contagem e os ids nas duas condi&#231;&#245;es. Compare scans e buffers, al&#233;m dos tempos.</li>
 <li>Explique que manuten&#231;&#227;o extra passa a existir quando o valor usado na express&#227;o muda.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> o &#237;ndice deve corresponder &#224; express&#227;o do filtro, e n&#227;o apenas mencionar a mesma coluna. Um Bitmap Scan pode ser uma escolha v&#225;lida: descreva o que o plano fez em vez de exigir o texto Index Scan.</p>
 <p><strong>Como conferir seu resultado:</strong> 300 linhas nas duas condi&#231;&#245;es; express&#227;o no filtro compat&#237;vel com a express&#227;o indexada. Observe eventuais Bitmap Scans sem trat&#225;-los como falha.</p>
 <h3 id="N2-5.5">N2-5.5 — Estat&#237;sticas individuais e depend&#234;ncia entre colunas</h3>
 <p><strong>Situa&#231;&#227;o:</strong> cada evento tem UF e cidade. Nesta carga, PR aparece sempre com Curitiba e SP sempre com Santos. Filtrar PR e Curitiba n&#227;o s&#227;o duas redu&#231;&#245;es independentes da popula&#231;&#227;o. O planejador pode precisar de informa&#231;&#227;o conjunta para estimar melhor a quantidade de linhas.</p>
 <p><strong>Seu objetivo:</strong> relacionar estimativas com a distribui&#231;&#227;o real e avaliar estat&#237;sticas de depend&#234;ncia entre colunas.</p>
 <p><strong>Dados de partida:</strong> mantenha os dados de eventos. N&#227;o altere a carga para gerar estat&#237;sticas ruins. pg_stats j&#225; &#233; uma vis&#227;o dispon&#237;vel para consulta das tabelas que seu usu&#225;rio pode ler; n&#227;o precisa ser ativada.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Me&#231;a tr&#234;s vezes SELECT * WHERE uf=&#39;PR&#39; AND cidade=&#39;Curitiba&#39;, antes de criar o objeto de estat&#237;sticas. Guarde estimativa, quantidade real e n&#243;/loops usados na compara&#231;&#227;o.</li>
 <li>Consulte pg_stats para cliente_id, uf e cidade. Observe n_distinct e as frequ&#234;ncias; correlation trata de ordem f&#237;sica, n&#227;o de depend&#234;ncia entre duas colunas.</li>
 <li>Agrupe eventos por uf,cidade para comprovar quais combina&#231;&#245;es existem e suas quantidades.</li>
 <li>Crie estat&#237;sticas com CREATE STATISTICS ... (dependencies) ON uf,cidade FROM eventos. Depois execute ANALYZE: criar o objeto sozinho n&#227;o coleta os dados.</li>
 <li>Repita as tr&#234;s medi&#231;&#245;es e consulte pg_stats_ext. Compare as estimativas antes/depois e escreva uma conclus&#227;o sem exigir mudan&#231;a de scan ou de tempo.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> 60% das linhas s&#227;o PR e tamb&#233;m Curitiba. Tratar os filtros como independentes sugeriria 60% &#215; 60%=36%; com depend&#234;ncia, eles podem descrever os mesmos 60%. Esse c&#225;lculo explica a hip&#243;tese, mas a evid&#234;ncia final deve vir do seu plano. Se a estimativa j&#225; era boa, registre isso.</p>
 <p><strong>Como conferir seu resultado:</strong> 180000 linhas reais, PR aparece apenas com Curitiba e SP apenas com Santos. As condi&#231;&#245;es s&#227;o dependentes: n&#227;o reduzem a popula&#231;&#227;o independentemente. N&#227;o confunda correlation de pg_stats (ordem f&#237;sica de uma coluna) com dependencies (rela&#231;&#227;o entre colunas). Criar estat&#237;sticas n&#227;o cria &#237;ndice nem reorganiza a tabela. Se a estimativa j&#225; era boa, documente isso.</p>
 <h3 id="N2-5.6">N2-5.6 — Organiza&#231;&#227;o f&#237;sica, vers&#245;es mortas e relat&#243;rio final</h3>
 <p><strong>Situa&#231;&#227;o:</strong> depois de testar &#237;ndices, a equipe quer investigar duas perguntas diferentes: aproximar fisicamente os eventos do mesmo cliente reduz leituras? E o que acontece com o espa&#231;o ap&#243;s atualiza&#231;&#245;es e exclus&#245;es? Misturar as experi&#234;ncias na tabela original prejudicaria as compara&#231;&#245;es anteriores.</p>
 <p><strong>Seu objetivo:</strong> separar organiza&#231;&#227;o f&#237;sica, limpeza e estat&#237;sticas usando uma c&#243;pia controlada dos eventos.</p>
 <p><strong>Dados de partida:</strong> crie eventos_fisicos como c&#243;pia de eventos e um &#237;ndice pr&#243;prio (cliente_id,data_evento), chamado n2_fisicos_cliente_data_idx. Os &#237;ndices da origem n&#227;o acompanham CREATE TABLE AS. N&#227;o mexa em eventos.</p>
-<p><strong>Passo a passo:</strong></p>
-<ol>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
 <li>Execute ANALYZE na c&#243;pia, consulte correlation de cliente_id e registre os tamanhos da tabela e dos &#237;ndices. Me&#231;a tr&#234;s vezes o filtro de refer&#234;ncia: cliente 42 entre 01/03/2026 e 10/04/2026, com SELECT *.</li>
 <li>Execute CLUSTER na c&#243;pia usando seu &#237;ndice, depois ANALYZE. Repita tamanhos, correlation e as tr&#234;s medi&#231;&#245;es. Essa &#233; a compara&#231;&#227;o antes/depois da organiza&#231;&#227;o f&#237;sica.</li>
 <li>S&#243; agora altere status para revisado onde id&lt;=60000 e exclua id&gt;270000. Confira quantas linhas cada comando afetou.</li>
 <li>Consulte total de linhas, revisadas e ids acima do limite; me&#231;a novamente os tamanhos. As medi&#231;&#245;es desta fase j&#225; incluem altera&#231;&#227;o dos dados.</li>
 <li>Com Auto-commit ativo e sem transa&#231;&#227;o pendente, selecione apenas VACUUM (VERBOSE, ANALYZE) bdadosql_n2.eventos_fisicos e execute. Salve as mensagens, depois repita contagens e tamanhos.</li>
 <li>Explique separadamente o efeito de CLUSTER, ANALYZE e VACUUM. Termine com o relat&#243;rio de uma p&#225;gina solicitado abaixo.</li>
-</ol>
+</ol></details>
 <p><strong>Dica para come&#231;ar:</strong> UPDATE pode deixar uma vers&#227;o antiga; DELETE torna a linha eleg&#237;vel para limpeza quando ela deixa de ser necess&#225;ria &#224;s transa&#231;&#245;es. Por isso, linhas mortas removidas n&#227;o s&#227;o a mesma coisa que linhas vivas exclu&#237;das. Autovacuum e poda podem limpar parte delas antes da medi&#231;&#227;o. Um arquivo que n&#227;o diminuiu pode ter espa&#231;o interno pronto para reutiliza&#231;&#227;o.</p>
 <p><strong>Como conferir seu resultado:</strong> ap&#243;s as escritas, 270000 linhas vivas, 60000 revisadas e nenhuma com id&gt;270000. At&#233; 90000 vers&#245;es mortas podem ter sido geradas pelas duas escritas; autovacuum, poda e outras condi&#231;&#245;es afetam o que o VACUUM reporta. Espa&#231;o reutiliz&#225;vel n&#227;o obriga redu&#231;&#227;o do arquivo. CLUSTER exige bloqueio exclusivo e n&#227;o mant&#233;m a organiza&#231;&#227;o nas novas escritas.</p>
 <p><strong>Extens&#227;o opcional:</strong> registre os tamanhos, execute VACUUM FULL somente na c&#243;pia, isoladamente, depois ANALYZE, e compare. Ele reescreve a tabela e exige espa&#231;o e bloqueio exclusivo; n&#227;o &#233; manuten&#231;&#227;o necess&#225;ria para concluir a tarefa. N&#227;o misture medi&#231;&#245;es dessa etapa com a linha de base original.</p>

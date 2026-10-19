@@ -22,3 +22,5 @@ A versão HTML contém os 30 enunciados e as 30 soluções geradas a partir das 
 Os arquivos do nível 1 permanecem como trilha inicial; suas alterações nesta edição se limitam aos links e à identificação da nova trilha.
 
 Na revisão didática, os 30 enunciados receberam contexto, objetivo, dados de partida, passos, dica e conferência. Foram verificados os seis componentes em cada tarefa, a numeração dos passos no HTML e a correspondência das 30 soluções incorporadas com o arquivo SQL. Os preparadores, soluções SQL e resultados esperados não foram alterados nessa revisão; não foram repetidas medições de desempenho.
+
+Na revisão de apresentação dos passos, foram conferidas 30 seções HTML details, inicialmente fechadas, com o controle Ver passo a passo e as listas numeradas preservadas. As 30 soluções continuam em seções recolhidas separadas.

@@ -1,5 +1,8 @@
 # Como estudar e executar os laboratórios pelo DBeaver
 
+**Esta é a trilha de nível 1**: 100 questões e 40 tarefas. Para continuar com problemas mais difíceis, use o [guia do nível 2](nivel_2/README.md) ou abra `nivel_2/Laboratorios_Nivel2.html`. O nível 2 oferece 30 desafios e preparação independente no schema bdadosql_n2.
+
+
 O DBeaver fica no Windows e envia os comandos SQL ao PostgreSQL instalado na VM Ubuntu do Hyper-V. Os arquivos HTML e SQL permanecem no Windows. Não é necessário WSL nem copiar arquivos para a VM. O HTML apresenta os exercícios; a execução dos laboratórios acontece no DBeaver.
 
 ## 1. Organize os arquivos

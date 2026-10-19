@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BDLab10 — Laboratórios de nível 2</title>
+<style>
+:root{color-scheme:dark;background:#0d1117;color:#e6edf3}*{box-sizing:border-box}body{font:16px/1.7 "Segoe UI",Arial,sans-serif;max-width:1100px;margin:0 auto;padding:28px}a{color:#8dcaff}a:focus-visible,summary:focus-visible{outline:3px solid #8dcaff;outline-offset:4px}nav{padding:18px;border:1px solid #364456;border-radius:10px;background:#182230;display:flex;flex-wrap:wrap;gap:12px 20px}h1{font-size:2rem}h1,h2,h3{color:#a6d5ff;line-height:1.35}h2{margin-top:2.5em;border-top:1px solid #364456;padding-top:24px}h3{margin-top:2em;scroll-margin-top:20px}p,li{max-width:95ch}li{margin:10px 0}code{font-family:Consolas,monospace;background:#203149;padding:2px 4px;border-radius:3px}pre{background:#161f2b;border:1px solid #364456;padding:18px;overflow:auto;font-size:14px;line-height:1.6}pre code{padding:0;background:transparent}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #364456;padding:10px;text-align:left}th{background:#203149}details{margin:16px 0;border:1px solid #364456;border-radius:8px;padding:14px}summary{cursor:pointer;color:#a6d5ff;font-weight:600}.intro{padding:16px;border-left:4px solid #8dcaff;background:#182230}footer{margin-top:40px;color:#b4c0cf}@media(max-width:600px){body{padding:16px}h1{font-size:1.6rem}}@media print{:root{color-scheme:light;background:white;color:black}body{max-width:none;padding:0;font-size:10pt}nav{display:none}h1,h2,h3,a,summary{color:#163b59}h2,h3{break-after:avoid}pre,code,th,.intro{background:#f0f3f6;color:black}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{break-inside:avoid}a{overflow-wrap:anywhere}@page{size:A4;margin:18mm}}
+</style></head><body>
+<nav aria-label="Navegação dos laboratórios"><a href="#N2-1">1 · Transações</a><a href="#N2-2">2 · Filtros</a><a href="#N2-3">3 · Relatórios</a><a href="#N2-4">4 · Junções</a><a href="#N2-5">5 · Desempenho</a><a href="#solucoes">Soluções</a><a href="../Questionario_Multipla_Escolha.html">Nível 1</a></nav>
+<p class="intro">Trilha prática · 5 laboratórios · 30 desafios · DBeaver no Windows + PostgreSQL na VM. Esta página funciona offline após baixar e extrair o repositório. Salve SQL e evidências em arquivos próprios; esta página não executa SQL nem salva progresso. As soluções ficam recolhidas no final.</p>
+<main>
+<h1>PostgreSQL — Laborat&#243;rios de n&#237;vel 2</h1>
+<p>Os laborat&#243;rios existentes no BDLab10 passam a ser a trilha de <strong>n&#237;vel 1</strong>. Esta trilha acrescenta <strong>cinco laborat&#243;rios e 30 desafios</strong>, com problemas de integridade, regras de neg&#243;cio, relat&#243;rios e investiga&#231;&#227;o de desempenho. Mant&#233;m a progress&#227;o dos temas dos cap&#237;tulos 3, 4, 5, 6 e 11, mas introduz recursos al&#233;m desse recorte do livro: transa&#231;&#245;es, CTEs, fun&#231;&#245;es de janela, subconsultas, outer joins e estat&#237;sticas estendidas. N&#227;o s&#227;o exerc&#237;cios transcritos do livro.</p>
+<h2>Como come&#231;ar no Windows e no DBeaver</h2>
+<ul>
+<li>Ligue a VM Ubuntu no Hyper-V e conecte o DBeaver ao PostgreSQL de treinamento. Use preferencialmente PostgreSQL 18. O <a href="../LEIA-ME.md">guia principal</a> explica conex&#227;o, banco e modo de execu&#231;&#227;o.</li>
+<li>Confirme o destino com <code>SELECT current_database(), current_user, version();</code>. N&#227;o &#233; necess&#225;rio recriar o banco do n&#237;vel 1: o n&#237;vel 2 usa seu pr&#243;prio schema <strong>bdadosql_n2</strong>. Tamb&#233;m funciona em um banco de treinamento novo, sem os scripts do n&#237;vel 1.</li>
+<li>Abra <strong>00_Preparacao_Nivel2.sql</strong> e execute como script completo, uma &#250;nica vez. Deixe Auto-commit ativo: o arquivo cont&#233;m seu pr&#243;prio BEGIN/COMMIT. Se houver erro, interrompa, execute ROLLBACK e investigue. N&#227;o continue ap&#243;s falha na cria&#231;&#227;o do schema.</li>
+<li>Confira as contagens: clientes 8; produtos 6; pedidos 12; itens 15; pagamentos 12; estoques 2; importa&#231;&#245;es 7; contatos tratados 0; acessos 4.</li>
+<li>Em cada editor ou reconex&#227;o, execute <code>SET search_path TO bdadosql_n2, public;</code>. Salve suas tentativas em arquivos pessoais separados, como <code>n2_lab03_tentativas.sql</code>.</li>
+<li>Execute somente a tarefa atual. Nos testes com BEGIN, SAVEPOINT e ROLLBACK, use o mesmo editor e a mesma sess&#227;o. Se o cliente abrir outra conex&#227;o, a transa&#231;&#227;o n&#227;o acompanha. Selecione e execute os comandos em etapas; para um erro intencional, execute a instru&#231;&#227;o de erro sozinha e depois a recupera&#231;&#227;o indicada.</li>
+<li>As solu&#231;&#245;es ficam em <strong>03_Solucoes_Nivel2.sql</strong>, separadas por identificador. Consulte depois de tentar. N&#227;o execute o arquivo inteiro: cont&#233;m transa&#231;&#245;es, altera&#231;&#245;es e experimentos com ordem obrigat&#243;ria.</li>
+<li>Somente ao chegar ao N2-5, execute <strong>02_Preparacao_Desempenho.sql</strong>. A tabela de 300 mil eventos &#233; independente das pequenas tabelas comerciais. N&#227;o crie &#237;ndices antes da linha de base.</li>
+</ul>
+<p>Para repetir tudo, use outro banco de treinamento e rode os dois preparadores no momento adequado. Os preparadores falham se os objetos j&#225; existirem: n&#227;o s&#227;o scripts de rein&#237;cio. Os exerc&#237;cios comerciais n&#227;o devem alterar permanentemente pedidos, itens, produtos, clientes ou pagamentos. As &#250;nicas mudan&#231;as persistentes previstas no N2-1 s&#227;o os contatos tratados; os estoques devem terminar como come&#231;aram.</p>
+<p>Tempo sugerido: N2-1 e N2-2, 60–90 min cada; N2-3 e N2-4, 90–120 min cada; N2-5, 120–180 min. Ajuste ao seu ritmo. Entregue SQL, sa&#237;da e explica&#231;&#227;o por tarefa; em desempenho, guarde os planos completos.</p>
+<h2>Regras do cen&#225;rio comercial</h2>
+<ul>
+<li>valor_total &#233; o valor bruto do pedido. A soma quantidade &#215; preco_unitario dos itens deve reconciliar com ele. O pre&#231;o do item &#233; o pre&#231;o hist&#243;rico da venda.</li>
+<li>Para os relat&#243;rios financeiros desta trilha, <strong>l&#237;quido contratado = valor_total − COALESCE(desconto, 0)</strong>. NULL continua significando desconto desconhecido no cadastro; a convers&#227;o para zero &#233; uma regra expl&#237;cita deste relat&#243;rio.</li>
+<li>Exclua pedidos cancelados dos relat&#243;rios financeiros e rankings, salvo instru&#231;&#227;o contr&#225;ria. O status n&#227;o substitui o c&#225;lculo do saldo.</li>
+<li>Em pagamentos, valor &#233; sempre positivo. Recebimento soma; estorno subtrai. <strong>Saldo = l&#237;quido contratado − recebido l&#237;quido</strong>. Saldo positivo &#233; a receber; negativo &#233; cr&#233;dito do cliente. N&#227;o esconda cr&#233;dito transformando todos os saldos negativos em zero no total global.</li>
+<li>O pedido 112 recebeu 120 para um l&#237;quido de 100: tem cr&#233;dito de 20. O pedido 104 recebeu 500 e teve estorno de 20: recebeu l&#237;quido 480.</li>
+<li>Ordene resultados com desempate est&#225;vel. Aus&#234;ncia de ORDER BY n&#227;o garante ordem. Valores esperados pressup&#245;em a carga inicial e a execu&#231;&#227;o dos testes de escrita com ROLLBACK.</li>
+</ul>
+<h2 id="N2-1">N2-1 — Integridade, transa&#231;&#245;es e importa&#231;&#227;o</h2>
+<p>Pr&#233;-requisitos novos: PRIMARY KEY, CHECK, BEGIN/COMMIT/ROLLBACK, SAVEPOINT, CTE, ROW_NUMBER e INSERT ON CONFLICT. Um SAVEPOINT marca um ponto dentro da transa&#231;&#227;o; ROLLBACK TO recupera somente at&#233; esse ponto. Uma CTE (<code>WITH nome AS (...)</code>) organiza etapas de uma consulta. ROW_NUMBER numera linhas por grupo e ordem escolhidos.</p>
+<h3 id="N2-1.1">N2-1.1 — Provar as restri&#231;&#245;es</h3>
+<p>Examine as restri&#231;&#245;es de estoques e pagamentos pelo DBeaver ou pg_constraint. Demonstre separadamente as rejei&#231;&#245;es a estoque negativo, chave composta repetida e pagamento de pedido inexistente. Fa&#231;a cada tentativa dentro de BEGIN/ROLLBACK, registrando erro e SQLSTATE. Depois de um erro, execute ROLLBACK antes da pr&#243;xima tentativa. N&#227;o remova restri&#231;&#245;es para passar nos testes.</p>
+<p><strong>Evid&#234;ncia:</strong> erros esperados 23514 (CHECK), 23505 (unicidade) e 23503 (FK); estoques continuam A=10, B=5 e pagamentos continuam com 12 linhas.</p>
+<h3 id="N2-1.2">N2-1.2 — Transfer&#234;ncia at&#244;mica de estoque</h3>
+<p>Em uma transa&#231;&#227;o, transfira tr&#234;s unidades do produto 1 de A para B. Debite A com condi&#231;&#227;o saldo &gt;= 3 e RETURNING; somente prossiga ao cr&#233;dito de B se exatamente uma linha foi debitada. Consulte os dois saldos e o total antes de decidir confirmar. Neste exerc&#237;cio, termine com <strong>ROLLBACK</strong>. Explique por que confirmar s&#243; o d&#233;bito viola a regra da transfer&#234;ncia e por que uma aplica&#231;&#227;o real precisa verificar a linha afetada.</p>
+<p><strong>Evid&#234;ncia:</strong> dentro da transa&#231;&#227;o, A=7, B=8 e total=15; ap&#243;s ROLLBACK, A=10 e B=5.</p>
+<h3 id="N2-1.3">N2-1.3 — Recuperar uma falha sem perder tudo</h3>
+<p>Abra uma transa&#231;&#227;o, debite duas unidades de A e crie um SAVEPOINT. Tente definir saldo negativo em B, isoladamente. Recupere com ROLLBACK TO SAVEPOINT; confira que o d&#233;bito anterior ao savepoint permanece. Credite duas unidades em B, confira o total e termine com ROLLBACK completo.</p>
+<p><strong>Evid&#234;ncia:</strong> ap&#243;s recuperar a falha, A=8 e B=5; ap&#243;s cr&#233;dito, A=8 e B=7; ao final A=10 e B=5. Explique a diferen&#231;a entre ROLLBACK e ROLLBACK TO.</p>
+<h3 id="N2-1.4">N2-1.4 — Diagnosticar o lote bruto</h3>
+<p>Sem alterar importacao_contatos, normalize nome com btrim, email com lower/btrim/NULLIF e UF com upper/btrim. Considere v&#225;lidos: nome n&#227;o vazio; email ausente ou compat&#237;vel com <code>^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$</code>; UF em PR, SP, PE, RS, RJ ou SC. Essa regex &#233; um filtro did&#225;tico, n&#227;o valida&#231;&#227;o completa de endere&#231;o de email. Liste o motivo de rejei&#231;&#227;o e identifique ids repetidos entre os v&#225;lidos.</p>
+<p><strong>Evid&#234;ncia:</strong> sete linhas brutas, cinco v&#225;lidas, duas inv&#225;lidas (lotes 6 e 7); cliente 3 tem dois registros v&#225;lidos. N&#227;o elimine duplicatas antes de contar e explicar a qualidade do lote.</p>
+<h3 id="N2-1.5">N2-1.5 — Importar com desempate e repeti&#231;&#227;o segura</h3>
+<p>Entre os v&#225;lidos, escolha o maior lote_id por cliente_id. Use ROW_NUMBER com PARTITION BY e importe em contatos_tratados com ON CONFLICT (cliente_id) DO UPDATE. Execute a mesma importa&#231;&#227;o duas vezes; compare o conte&#250;do final. Explique por que deduplicar antes do UPSERT &#233; necess&#225;rio quando duas entradas atingem a mesma chave.</p>
+<p><strong>Evid&#234;ncia:</strong> quatro contatos, ids 1, 2, 3 e 9; cliente 3 se chama Carla Nova; cliente 2 tem email NULL; nomes e emails tratados. A segunda execu&#231;&#227;o mant&#233;m o mesmo conte&#250;do, mesmo que o comando reporte atualiza&#231;&#245;es.</p>
+<h3 id="N2-1.6">N2-1.6 — Reserva condicional sem saldo negativo</h3>
+<p>Em BEGIN, tente retirar oito unidades de A com UPDATE condicionado a saldo &gt;= 8, usando RETURNING. Repita a tentativa ainda na mesma transa&#231;&#227;o. Termine com ROLLBACK. Discuta a vantagem sobre consultar o saldo e executar depois um UPDATE incondicional. Esta &#233; uma demonstra&#231;&#227;o em uma sess&#227;o; n&#227;o conclua que ela testa toda a concorr&#234;ncia de uma aplica&#231;&#227;o.</p>
+<p><strong>Evid&#234;ncia:</strong> primeira tentativa retorna saldo 2; a segunda afeta zero linhas; depois do ROLLBACK, saldo 10.</p>
+<h2 id="N2-2">N2-2 — Filtros, NULL, texto e limites de datas</h2>
+<p>Pr&#233;-requisitos novos: NULLIF, btrim, IS DISTINCT FROM, timestamptz, AT TIME ZONE e intervalos com limite superior exclusivo. Todas as tarefas s&#227;o de leitura. N&#227;o transforme valores ausentes no cadastro para facilitar a consulta.</p>
+<h3 id="N2-2.1">N2-2.1 — Aus&#234;ncia de email com regra composta</h3>
+<p>Encontre clientes ativos de PR ou SP cujo email normalizado esteja ausente, incluindo espa&#231;os vazios. Mostre id, nome, UF e email original. Entregue uma vers&#227;o com par&#234;nteses claros e explique por que email IS NULL sozinho n&#227;o atende &#224; regra.</p>
+<p><strong>Evid&#234;ncia:</strong> apenas Diego, id 4. Ana n&#227;o entra: seu email tem espa&#231;os, mas n&#227;o &#233; vazio.</p>
+<h3 id="N2-2.2">N2-2.2 — Desconhecido, zero e positivo</h3>
+<p>Em uma &#250;nica consulta agregada de pedidos, conte descontos desconhecidos, zero e positivos sem confundir NULL com zero. Mostre tamb&#233;m as somas de desconto original e com COALESCE, explicando por que podem coincidir mesmo com sem&#226;nticas diferentes.</p>
+<p><strong>Evid&#234;ncia:</strong> desconhecidos=3, zero=6, positivos=3; soma de descontos=40. Os tr&#234;s grupos cobrem os 12 pedidos.</p>
+<h3 id="N2-2.3">N2-2.3 — Mar&#231;o no hor&#225;rio de S&#227;o Paulo</h3>
+<p>Em acessos, encontre os eventos de mar&#231;o de 2026 considerando America/Sao_Paulo. Construa o filtro direto em ocorrido_em com limites timestamptz equivalentes a 01/03 00:00 local e 01/04 00:00 local, usando &gt;= e &lt;. Mostre tamb&#233;m a apresenta&#231;&#227;o local com AT TIME ZONE. Execute a consulta com a sess&#227;o em UTC e depois em America/Sao_Paulo; mantenha os limites expl&#237;citos e restaure a configura&#231;&#227;o ao terminar.</p>
+<p><strong>Evid&#234;ncia:</strong> ids 2 e 3 nas duas execu&#231;&#245;es. O id 1 ainda &#233; fevereiro local; o 4 j&#225; &#233; abril local. Explique o risco de usar BETWEEN com o primeiro instante do m&#234;s seguinte e de converter a coluna para date para filtrar sem considerar o fuso.</p>
+<h3 id="N2-2.4">N2-2.4 — Faixas de pre&#231;o sem buracos</h3>
+<p>Classifique produtos como baixo (&lt;100), medio (100 at&#233; 500, inclusive) e alto (&gt;500). Entregue a listagem e a quantidade por faixa. Demonstre o comportamento nos limites 100 e 500 com VALUES, sem inserir produtos extras.</p>
+<p><strong>Evid&#234;ncia:</strong> baixo=2, medio=3, alto=1; 100 e 500 s&#227;o medio.</p>
+<h3 id="N2-2.5">N2-2.5 — NULL na compara&#231;&#227;o</h3>
+<p>Compare os ids retornados por desconto &lt;&gt; 0 e desconto IS DISTINCT FROM 0. Entregue tamb&#233;m a consulta que identifica exatamente os ids presentes em uma vers&#227;o e ausentes na outra usando EXCEPT. Explique qual express&#227;o escolher para buscar desconto positivo e qual serve para detectar qualquer diferen&#231;a em rela&#231;&#227;o a zero, incluindo aus&#234;ncia.</p>
+<p><strong>Evid&#234;ncia:</strong> &lt;&gt; retorna 101,104,107; IS DISTINCT FROM acrescenta 102,105,108. N&#227;o trate a segunda lista como prova de que o desconto &#233; positivo.</p>
+<h3 id="N2-2.6">N2-2.6 — Caracteres literais em padr&#245;es</h3>
+<p>Encontre o produto cujo nome cont&#233;m o caractere % literal e depois aquele que cont&#233;m _ literal. Use LIKE com um caractere de escape expl&#237;cito, como !. Compare com LIKE &#39;%_%&#39; e explique a diferen&#231;a entre wildcard e texto literal. Ordene por id.</p>
+<p><strong>Evid&#234;ncia:</strong> as buscas literais retornam somente Cabo_100%, id 6; o padr&#227;o sem escape retorna os seis produtos.</p>
+<h2 id="N2-3">N2-3 — Relat&#243;rios financeiros e fun&#231;&#245;es de janela</h2>
+<p>Pr&#233;-requisitos novos: FILTER, CTE, generate_series, date_trunc, ROW_NUMBER, LAG e SUM OVER. Uma janela mant&#233;m as linhas do resultado e calcula sobre seu grupo; GROUP BY resume linhas. Use ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW para explicitar o acumulado. Todas as tarefas usam a carga original, sem escrita.</p>
+<h3 id="N2-3.1">N2-3.1 — Receita contratada com meses vazios</h3>
+<p>Gere um calend&#225;rio de janeiro a junho de 2026. Calcule o l&#237;quido contratado por m&#234;s, excluindo cancelados e preservando os meses sem pedidos. Entregue exatamente uma linha por m&#234;s, com zero nos vazios. Trate como compet&#234;ncia a data do pedido, n&#227;o a do pagamento.</p>
+<p><strong>Evid&#234;ncia:</strong> janeiro=1290; fevereiro=980; mar&#231;o=540; abril=250; maio=0; junho=0. Total=3060.</p>
+<h3 id="N2-3.2">N2-3.2 — Posi&#231;&#227;o financeira por pedido</h3>
+<p>Agregue pagamentos por pedido ANTES de lig&#225;-los ao cabe&#231;alho. Mostre contratado, recebido l&#237;quido, saldo e situa&#231;&#227;o (a_receber, quitado ou credito) de cada pedido n&#227;o cancelado. Inclua pedidos sem pagamento e confira os totais. N&#227;o substitua o saldo pelo status cadastrado.</p>
+<p><strong>Evid&#234;ncia:</strong> dez pedidos; contratado=3060, recebido=2730, saldo assinado=330. A receber positivo=350 e cr&#233;dito=20. Pedido 112 tem saldo -20; 104 tem recebido 480 e saldo zero.</p>
+<h3 id="N2-3.3">N2-3.3 — Dois maiores clientes de cada m&#234;s</h3>
+<p>Some o l&#237;quido contratado por cliente e m&#234;s; use ROW_NUMBER para selecionar no m&#225;ximo os dois maiores de cada m&#234;s. Desempate por cliente_id crescente e n&#227;o por nome. Explique como o resultado mudaria se a regra pedisse todos os empatados na segunda posi&#231;&#227;o e fosse usado DENSE_RANK somente pelo total.</p>
+<p><strong>Evid&#234;ncia:</strong> janeiro: (1,1140),(2,150); fevereiro: (4,500),(3,480); mar&#231;o: (6,300),(5,190); abril: (5,150),(3,100). O cliente 1 fica fora do top 2 de mar&#231;o.</p>
+<h3 id="N2-3.4">N2-3.4 — Acumulado e varia&#231;&#227;o mensal</h3>
+<p>Sobre os seis meses de N2-3.1, calcule total acumulado, receita do m&#234;s anterior com LAG e varia&#231;&#227;o percentual. O primeiro m&#234;s n&#227;o tem anterior. Se o anterior for zero, a varia&#231;&#227;o percentual deve ser NULL, evitando divis&#227;o por zero. N&#227;o remova os meses vazios antes da janela.</p>
+<p><strong>Evid&#234;ncia:</strong> acumulados=1290,2270,2810,3060,3060,3060; maio varia -100%; junho tem varia&#231;&#227;o NULL. Use round(...,2) apenas na apresenta&#231;&#227;o.</p>
+<h3 id="N2-3.5">N2-3.5 — Recebimentos e estornos separados</h3>
+<p>Por m&#234;s de pagamento, mostre recebimentos brutos, estornos, recebido l&#237;quido e percentual estornado sobre o bruto. Preserve janeiro a junho e proteja a divis&#227;o por zero. Compare com a compet&#234;ncia de N2-3.1 e explique por que as duas vis&#245;es podem divergir em um cen&#225;rio real.</p>
+<p><strong>Evid&#234;ncia:</strong> l&#237;quidos por m&#234;s=1190,780,490,270,0,0; fevereiro tem bruto 800, estorno 20 e percentual 2,50%; total l&#237;quido=2730. Nesta carga, datas de recebimento permanecem no m&#234;s do pedido, mas h&#225; pagamentos parciais e cr&#233;ditos.</p>
+<h3 id="N2-3.6">N2-3.6 — Cobran&#231;a sem compensa&#231;&#227;o indevida</h3>
+<p>Produza relat&#243;rio por cliente com valor a receber e cr&#233;dito separados. Considere somente pedidos n&#227;o cancelados. Classifique cada saldo POR PEDIDO antes de agregar, de modo que eventual cr&#233;dito de um pedido n&#227;o esconda d&#237;vida de outro. Mostre somente clientes com a receber &gt; 0.</p>
+<p><strong>Evid&#234;ncia:</strong> clientes 1=50, 2=100 e 4=200 a receber. Em uma consulta complementar sem HAVING, cliente 3 tem cr&#233;dito=20. Explique por que SUM(saldo) e SUM(GREATEST(saldo,0)) respondem perguntas diferentes.</p>
+<h2 id="N2-4">N2-4 — Cardinalidade, aus&#234;ncia e reconcilia&#231;&#227;o</h2>
+<p>Pr&#233;-requisitos novos: LEFT JOIN, FULL JOIN, NOT EXISTS e LEFT JOIN LATERAL. Uma jun&#231;&#227;o lateral pode consultar dados da linha &#224; esquerda; LIMIT 1 exige ORDER BY determin&#237;stico. Todas as tarefas de escrita terminam com ROLLBACK.</p>
+<h3 id="N2-4.1">N2-4.1 — Clientes sem movimento no relat&#243;rio</h3>
+<p>Liste todos os oito clientes, quantidade de pedidos n&#227;o cancelados e total l&#237;quido contratado. Clientes sem pedidos eleg&#237;veis devem aparecer com zero. Fa&#231;a uma vers&#227;o com o filtro de status no ON ou em uma CTE e explique o efeito de coloc&#225;-lo no WHERE depois do LEFT JOIN. N&#227;o use COUNT(*) para contar filhos ausentes.</p>
+<p><strong>Evid&#234;ncia:</strong> Gabriela e Hugo aparecem com zero; total global contratado=3060 e quantidade=10.</p>
+<h3 id="N2-4.2">N2-4.2 — Anti-join resistente a NULL</h3>
+<p>Encontre clientes sem nenhum pedido n&#227;o cancelado usando NOT EXISTS. Depois compare NOT IN e NOT EXISTS para excluir os ids da lista VALUES (2),(NULL::integer). Explique por que a presen&#231;a de NULL muda o primeiro filtro.</p>
+<p><strong>Evid&#234;ncia:</strong> sem pedidos eleg&#237;veis: 7 e 8; exclus&#227;o da lista com NOT IN retorna zero clientes; com NOT EXISTS retorna sete, todos exceto 2.</p>
+<h3 id="N2-4.3">N2-4.3 — Investigar uma soma inflada</h3>
+<p>Para o pedido 101, junte diretamente pedidos, itens e pagamentos e some os subtotais dos itens e o recebido. Conte as linhas intermedi&#225;rias e identifique a multiplica&#231;&#227;o. Corrija usando duas agrega&#231;&#245;es independentes por pedido antes da jun&#231;&#227;o. Explique por que SUM(DISTINCT valor) n&#227;o &#233; uma solu&#231;&#227;o geral.</p>
+<p><strong>Evid&#234;ncia:</strong> jun&#231;&#227;o ing&#234;nua produz quatro linhas, subtotal inflado=500 e recebido inflado=480. A vers&#227;o correta retorna bruto dos itens=250, recebido=240 e l&#237;quido contratado=240. Valores diferentes aqui podem representar desconto, n&#227;o erro de cadastro.</p>
+<h3 id="N2-4.4">N2-4.4 — &#218;ltimo pedido sem perder clientes</h3>
+<p>Use LEFT JOIN LATERAL para mostrar o pedido mais recente de cada cliente, incluindo cancelados, preservando clientes sem pedidos. Desempate por data_pedido DESC, id DESC. Como alternativa, entregue vers&#227;o com ROW_NUMBER e compare o resultado usando EXCEPT nas duas dire&#231;&#245;es.</p>
+<p><strong>Evid&#234;ncia:</strong> ids dos &#250;ltimos pedidos dos clientes 1 a 6: 108,103,112,111,110,109; clientes 7 e 8 ficam com NULL. As vers&#245;es devem retornar o mesmo conjunto.</p>
+<h3 id="N2-4.5">N2-4.5 — Auditoria com registros ausentes dos dois lados</h3>
+<p>Simule duas fontes em CTEs: em cabecalhos, exclua o pedido 111 e acrescente 1 ao valor_total do 101; em totais_itens, exclua o pedido 112 e agregue os itens restantes. N&#227;o altere as tabelas reais. Use FULL JOIN para listar somente diverg&#234;ncias, identificando aus&#234;ncia em cada fonte ou diferen&#231;a de valor. Use IS DISTINCT FROM para comparar valores com NULL.</p>
+<p><strong>Evid&#234;ncia:</strong> tr&#234;s ocorr&#234;ncias: 101 com diferen&#231;a de 1; 111 somente nos itens; 112 somente no cabe&#231;alho. Uma jun&#231;&#227;o interna esconderia os dois registros ausentes.</p>
+<h3 id="N2-4.6">N2-4.6 — Pre&#231;o hist&#243;rico versus pre&#231;o atual</h3>
+<p>Em BEGIN, calcule os itens do pedido 101 pelo pre&#231;o hist&#243;rico e pelo cadastro atual. Altere somente o pre&#231;o atual do Mouse para 60, repita a compara&#231;&#227;o e execute ROLLBACK. Entregue uma conclus&#227;o sobre qual pre&#231;o usar em receita hist&#243;rica e em uma simula&#231;&#227;o de reposi&#231;&#227;o a pre&#231;os atuais.</p>
+<p><strong>Evid&#234;ncia:</strong> antes, ambos=250; depois, hist&#243;rico=250 e cadastro atual=270; ap&#243;s ROLLBACK, pre&#231;o do Mouse=50. N&#227;o reescreva o pre&#231;o dos itens.</p>
+<h2 id="N2-5">N2-5 — Desempenho orientado por hip&#243;teses</h2>
+<p>Execute <strong>02_Preparacao_Desempenho.sql</strong> uma vez. Esperado: 300000 linhas, 1000 clientes, 15000 pendentes e 82 linhas no filtro de refer&#234;ncia. A distribui&#231;&#227;o UF/cidade tem depend&#234;ncia intencional para estudar estat&#237;sticas conjuntas; n&#227;o &#233; necess&#225;rio produzir estat&#237;sticas desatualizadas. N&#227;o altere par&#226;metros globais nem desative scans para for&#231;ar um plano.</p>
+<p>Antes de cada etapa, consulte pg_indexes para saber quais &#237;ndices j&#225; existem. Se perdeu a linha de base, recomece em outro banco de treinamento; n&#227;o compare um estado j&#225; reorganizado como se fosse o original. Auto-commit ativo para os experimentos de manuten&#231;&#227;o, sem transa&#231;&#227;o pendente. Me&#231;a tr&#234;s vezes cada consulta em cada condi&#231;&#227;o, mantendo filtro e proje&#231;&#227;o iguais. Registre vers&#227;o, CPU/RAM da VM, cache observado e &#237;ndices existentes. N&#227;o h&#225; meta fixa de milissegundos nem obriga&#231;&#227;o de escolher um tipo espec&#237;fico de scan.</p>
+<h3 id="N2-5.1">N2-5.1 — Linha de base e seletividade</h3>
+<p>Sem &#237;ndices em eventos, execute ANALYZE, registre tamanhos e me&#231;a estas tr&#234;s consultas com EXPLAIN (ANALYZE, BUFFERS): cliente 42 entre 01/03 e 10/04 inclusive; somente esse intervalo de datas; todos os eventos. Mantenha SELECT * nas tr&#234;s. Relacione cardinalidade e seletividade com o plano. N&#227;o some buffers de pai e filho, pois isso pode contar o mesmo trabalho duas vezes. Em n&#243;s repetidos, actual rows &#233; uma m&#233;dia por execu&#231;&#227;o; interprete loops e workers.</p>
+<p><strong>Evid&#234;ncia:</strong> filtro combinado=82 linhas; intervalo sem cliente=82000; tabela inteira=300000. Guarde os nove planos antes da cria&#231;&#227;o dos &#237;ndices.</p>
+<h3 id="N2-5.2">N2-5.2 — &#205;ndice composto e seu custo</h3>
+<p>Crie B-tree (cliente_id, data_evento). Repita as tr&#234;s consultas de N2-5.1 e compare o trabalho e o tamanho do &#237;ndice. Explique por que o &#237;ndice pode ajudar o filtro seletivo e n&#227;o ser escolhido para a tabela inteira. Para a busca s&#243; por data, descreva o plano real sem afirmar que a aus&#234;ncia de filtro na primeira coluna impede todo uso do &#237;ndice.</p>
+<p><strong>Evid&#234;ncia:</strong> resultados id&#234;nticos aos da linha de base; conclus&#227;o baseada em buffers, estimativas, linhas e custo de armazenamento, al&#233;m do tempo. N&#227;o confunda cost com milissegundos.</p>
+<h3 id="N2-5.3">N2-5.3 — &#205;ndice parcial para a fila pendente</h3>
+<p>Me&#231;a SELECT * de eventos pendentes em mar&#231;o (&gt;=01/03 e &lt;01/04), ordenados por data_evento,id, LIMIT 50. Projete um &#237;ndice parcial (data_evento,id) WHERE status=&#39;pendente&#39;, crie e repita. Compare tamb&#233;m a consulta equivalente para status=&#39;pago&#39;: explique por que o &#237;ndice parcial n&#227;o cobre essa popula&#231;&#227;o. Registre tamanhos do &#237;ndice parcial e do composto.</p>
+<p><strong>Evid&#234;ncia:</strong> h&#225; 4000 pendentes em mar&#231;o antes do LIMIT; a busca limitada retorna 50 linhas. N&#227;o exija uso do &#237;ndice se o plano real justificar outra estrat&#233;gia. Sua conclus&#227;o deve distinguir predicado do &#237;ndice, ordena&#231;&#227;o e limite.</p>
+<h3 id="N2-5.4">N2-5.4 — &#205;ndice de express&#227;o</h3>
+<p>Me&#231;a SELECT * WHERE lower(email)=&#39;cliente42@example.test&#39;, tr&#234;s vezes. Crie um &#237;ndice em lower(email), execute ANALYZE e repita as medi&#231;&#245;es. Explique a diferen&#231;a entre um &#237;ndice na coluna original e um na express&#227;o e acrescente uma consulta de confer&#234;ncia dos ids antes/depois.</p>
+<p><strong>Evid&#234;ncia:</strong> 300 linhas nas duas condi&#231;&#245;es; express&#227;o no filtro compat&#237;vel com a express&#227;o indexada. Observe eventuais Bitmap Scans sem trat&#225;-los como falha.</p>
+<h3 id="N2-5.5">N2-5.5 — Estat&#237;sticas individuais e depend&#234;ncia entre colunas</h3>
+<p>Me&#231;a SELECT * WHERE uf=&#39;PR&#39; AND cidade=&#39;Curitiba&#39; antes de criar estat&#237;sticas estendidas. Examine pg_stats para cliente_id, uf e cidade. Verifique por agrupamento se UF determina cidade nesta carga. Crie CREATE STATISTICS com dependencies sobre uf,cidade, execute ANALYZE e me&#231;a novamente a MESMA consulta. Consulte pg_stats_ext. Compare linhas estimadas/reais; registre um n&#243; compar&#225;vel, considerando loops e paralelismo.</p>
+<p><strong>Evid&#234;ncia:</strong> 180000 linhas reais, PR aparece apenas com Curitiba e SP apenas com Santos. As condi&#231;&#245;es s&#227;o dependentes: n&#227;o reduzem a popula&#231;&#227;o independentemente. N&#227;o confunda correlation de pg_stats (ordem f&#237;sica de uma coluna) com dependencies (rela&#231;&#227;o entre colunas). Criar estat&#237;sticas n&#227;o cria &#237;ndice nem reorganiza a tabela. Se a estimativa j&#225; era boa, documente isso.</p>
+<h3 id="N2-5.6">N2-5.6 — Organiza&#231;&#227;o f&#237;sica, vers&#245;es mortas e relat&#243;rio final</h3>
+<p>Crie eventos_fisicos como c&#243;pia de eventos, sem tocar nos experimentos anteriores; crie nela um &#237;ndice (cliente_id,data_evento). Me&#231;a o filtro de refer&#234;ncia tr&#234;s vezes, consulte correlation e tamanhos. Execute CLUSTER pela c&#243;pia e ANALYZE, repita a medi&#231;&#227;o e a consulta de estat&#237;sticas. Depois atualize status para revisado onde id&lt;=60000 e exclua id&gt;270000. Registre contagens e tamanhos antes/depois de VACUUM (VERBOSE, ANALYZE), executado isoladamente.</p>
+<p><strong>Evid&#234;ncia:</strong> ap&#243;s as escritas, 270000 linhas vivas, 60000 revisadas e nenhuma com id&gt;270000. At&#233; 90000 vers&#245;es mortas podem ter sido geradas pelas duas escritas; autovacuum, poda e outras condi&#231;&#245;es afetam o que o VACUUM reporta. Espa&#231;o reutiliz&#225;vel n&#227;o obriga redu&#231;&#227;o do arquivo. CLUSTER exige bloqueio exclusivo e n&#227;o mant&#233;m a organiza&#231;&#227;o nas novas escritas.</p>
+<p><strong>Extens&#227;o opcional:</strong> registre os tamanhos, execute VACUUM FULL somente na c&#243;pia, isoladamente, depois ANALYZE, e compare. Ele reescreve a tabela e exige espa&#231;o e bloqueio exclusivo; n&#227;o &#233; manuten&#231;&#227;o necess&#225;ria para concluir a tarefa. N&#227;o misture medi&#231;&#245;es dessa etapa com a linha de base original.</p>
+<p>Entregue relat&#243;rio de uma p&#225;gina: hip&#243;tese, m&#233;todo, evid&#234;ncias, conclus&#227;o, limita&#231;&#227;o e recomenda&#231;&#227;o de quais &#237;ndices manter para as consultas testadas. Uma conclus&#227;o de aus&#234;ncia de ganho &#233; v&#225;lida se sustentada pelos dados. Distingua limpeza (VACUUM), atualiza&#231;&#227;o de estat&#237;sticas (ANALYZE) e organiza&#231;&#227;o f&#237;sica (CLUSTER/FULL).</p>
+<h2>Modelo de evid&#234;ncias e avalia&#231;&#227;o</h2>
+<p>Por tarefa, salve: identificador, SQL, estado inicial necess&#225;rio, resultado esperado/obtido, explica&#231;&#227;o e corre&#231;&#227;o depois da primeira tentativa. Os erros intencionais s&#227;o evid&#234;ncia de integridade, n&#227;o falhas a esconder.</p>
+<div class="table-wrap"><table><thead><tr>
+<th scope="col">Etapa/consulta</th>
+<th scope="col">Execu&#231;&#227;o</th>
+<th scope="col">&#205;ndices existentes</th>
+<th scope="col">N&#243;/loops</th>
+<th scope="col">Estimadas/reais</th>
+<th scope="col">Buffers hit/read</th>
+<th scope="col">Planejamento ms</th>
+<th scope="col">Execu&#231;&#227;o ms</th>
+<th scope="col">Observa&#231;&#227;o</th>
+</tr></thead><tbody>
+<tr>
+<td>N2-5.1 / cliente e data</td>
+<td>1</td>
+<td>nenhum</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p>Cada laborat&#243;rio vale 20 pontos: seis tarefas de 3 pontos (SQL/m&#233;todo=1; resultado/evid&#234;ncia=1; explica&#231;&#227;o=1) e 2 pontos por organiza&#231;&#227;o e revis&#227;o. Total=100. Em desempenho, n&#227;o se atribui nota por tempo m&#237;nimo: avalie consist&#234;ncia do m&#233;todo e qualidade das evid&#234;ncias. N&#227;o h&#225; question&#225;rio adicional de m&#250;ltipla escolha nesta trilha; o foco &#233; resolver e justificar problemas pr&#225;ticos.</p>
+<h2>Refer&#234;ncias oficiais e limites da valida&#231;&#227;o</h2>
+<ul>
+<li><a href="https://www.postgresql.org/docs/18/tutorial-transactions.html">Transa&#231;&#245;es</a> e <a href="https://www.postgresql.org/docs/18/sql-savepoint.html">SAVEPOINT</a>.</li>
+<li><a href="https://www.postgresql.org/docs/18/sql-insert.html">INSERT / ON CONFLICT</a>, <a href="https://www.postgresql.org/docs/18/queries-with.html">CTEs</a> e <a href="https://www.postgresql.org/docs/18/tutorial-window.html">fun&#231;&#245;es de janela</a>.</li>
+<li><a href="https://www.postgresql.org/docs/18/queries-table-expressions.html">Jun&#231;&#245;es e LATERAL</a>, <a href="https://www.postgresql.org/docs/18/functions-matching.html">padr&#245;es de texto</a> e <a href="https://www.postgresql.org/docs/18/datatype-datetime.html">tipos de data/hora</a>.</li>
+<li><a href="https://www.postgresql.org/docs/18/using-explain.html">EXPLAIN</a>, <a href="https://www.postgresql.org/docs/18/indexes-partial.html">&#237;ndices parciais</a> e <a href="https://www.postgresql.org/docs/18/indexes-expressional.html">&#237;ndices de express&#227;o</a>.</li>
+<li><a href="https://www.postgresql.org/docs/18/planner-stats.html">Estat&#237;sticas e depend&#234;ncias</a>, <a href="https://www.postgresql.org/docs/18/view-pg-stats.html">pg_stats</a>, <a href="https://www.postgresql.org/docs/18/sql-cluster.html">CLUSTER</a> e <a href="https://www.postgresql.org/docs/18/sql-vacuum.html">VACUUM</a>.</li>
+</ul>
+<p>Veja <strong>VALIDACAO.md</strong> para os checks efetivamente realizados na edi&#231;&#227;o distribu&#237;da. Planos, desempenho e integra&#231;&#227;o com sua VM devem ser medidos no PostgreSQL do seu ambiente; o material n&#227;o fornece tempos ou scans garantidos.</p>
+<h2 id="solucoes">Soluções comentadas — consulte após tentar</h2><p>Abra somente a tarefa que está corrigindo. Não execute o arquivo completo de soluções. Os erros intencionais estão comentados; execute-os separadamente.</p>
+<details><summary>Solução N2-1.1</summary><pre><code>-- N2-1.1: inspecione primeiro; cada tentativa deve ser isolada.
+SELECT conrelid::regclass AS tabela, conname, pg_get_constraintdef(oid)
+FROM pg_constraint WHERE connamespace=&#39;bdadosql_n2&#39;::regnamespace
+ORDER BY tabela,conname;
+-- BEGIN;
+-- UPDATE estoques SET saldo=-1 WHERE produto_id=1 AND deposito=&#39;A&#39;; -- 23514
+-- ROLLBACK;
+-- BEGIN;
+-- INSERT INTO estoques VALUES (1,&#39;A&#39;,1); -- 23505
+-- ROLLBACK;
+-- BEGIN;
+-- INSERT INTO pagamentos VALUES (99,999,DATE &#39;2026-01-01&#39;,&#39;recebimento&#39;,1); -- 23503
+-- ROLLBACK;
+SELECT * FROM estoques ORDER BY produto_id,deposito;</code></pre></details>
+<details><summary>Solução N2-1.2</summary><pre><code>-- N2-1.2: s&#243; execute o cr&#233;dito ap&#243;s conferir uma linha no RETURNING.
+BEGIN;
+UPDATE estoques SET saldo=saldo-3
+WHERE produto_id=1 AND deposito=&#39;A&#39; AND saldo&gt;=3 RETURNING *;
+-- Conferir a sa&#237;da acima antes de executar o cr&#233;dito na mesma sess&#227;o.
+UPDATE estoques SET saldo=saldo+3
+WHERE produto_id=1 AND deposito=&#39;B&#39; RETURNING *;
+SELECT deposito,saldo,SUM(saldo) OVER () AS total FROM estoques ORDER BY deposito;
+ROLLBACK;
+SELECT * FROM estoques ORDER BY deposito; -- A10 B5</code></pre></details>
+<details><summary>Solução N2-1.3</summary><pre><code>-- N2-1.3: passos manuais; a falha n&#227;o deve interromper um script completo.
+BEGIN;
+UPDATE estoques SET saldo=saldo-2 WHERE produto_id=1 AND deposito=&#39;A&#39;;
+SAVEPOINT antes_da_falha;
+-- Execute a pr&#243;xima linha sem o coment&#225;rio, sozinha: erro 23514 esperado.
+-- UPDATE estoques SET saldo=-1 WHERE produto_id=1 AND deposito=&#39;B&#39;;
+-- Ap&#243;s o erro, execute somente a recupera&#231;&#227;o antes das demais instru&#231;&#245;es:
+ROLLBACK TO SAVEPOINT antes_da_falha;
+SELECT * FROM estoques ORDER BY deposito; -- A8 B5
+UPDATE estoques SET saldo=saldo+2 WHERE produto_id=1 AND deposito=&#39;B&#39;;
+SELECT * FROM estoques ORDER BY deposito; -- A8 B7
+ROLLBACK;</code></pre></details>
+<details><summary>Solução N2-1.4</summary><pre><code>-- N2-1.4: diagn&#243;stico de todas as linhas, sem alterar a origem.
+WITH normalizados AS (
+ SELECT lote_id,cliente_id,btrim(nome) AS nome,
+ NULLIF(lower(btrim(email)),&#39;&#39;) AS email,upper(btrim(uf)) AS uf
+ FROM importacao_contatos
+), classificados AS (
+ SELECT *,CASE
+ WHEN nome IS NULL OR nome=&#39;&#39; THEN &#39;nome ausente&#39;
+ WHEN uf IS NULL OR uf NOT IN (&#39;PR&#39;,&#39;SP&#39;,&#39;PE&#39;,&#39;RS&#39;,&#39;RJ&#39;,&#39;SC&#39;) THEN &#39;UF invalida&#39;
+ WHEN email IS NOT NULL AND email !~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+ THEN &#39;email invalido&#39; ELSE &#39;valido&#39; END AS motivo
+ FROM normalizados
+)
+SELECT *,COUNT(*) FILTER (WHERE motivo=&#39;valido&#39;) OVER (PARTITION BY cliente_id)
+ AS registros_validos_do_cliente
+FROM classificados ORDER BY lote_id;</code></pre></details>
+<details><summary>Solução N2-1.5</summary><pre><code>-- N2-1.5: execute este comando duas vezes e confira o conte&#250;do.
+WITH normalizados AS (
+ SELECT lote_id,cliente_id,btrim(nome) AS nome,
+ NULLIF(lower(btrim(email)),&#39;&#39;) AS email,upper(btrim(uf)) AS uf
+ FROM importacao_contatos
+), validos AS (
+ SELECT * FROM normalizados
+ WHERE nome IS NOT NULL AND nome&lt;&gt;&#39;&#39;
+ AND uf IN (&#39;PR&#39;,&#39;SP&#39;,&#39;PE&#39;,&#39;RS&#39;,&#39;RJ&#39;,&#39;SC&#39;)
+ AND (email IS NULL OR email ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;)
+), ordenados AS (
+ SELECT *,ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY lote_id DESC) AS rn
+ FROM validos
+)
+INSERT INTO contatos_tratados (cliente_id,nome,email,uf)
+SELECT cliente_id,nome,email,uf FROM ordenados WHERE rn=1
+ON CONFLICT (cliente_id) DO UPDATE
+SET nome=EXCLUDED.nome,email=EXCLUDED.email,uf=EXCLUDED.uf;
+SELECT * FROM contatos_tratados ORDER BY cliente_id;
+-- 1 Ana Silva ana@example.test PR; 2 Bruno Costa NULL PR;
+-- 3 Carla Nova carla@example.test SP; 9 Ivan ivan@example.test RJ.</code></pre></details>
+<details><summary>Solução N2-1.6</summary><pre><code>-- N2-1.6: primeira retirada 1 linha, segunda 0; nada persiste.
+BEGIN;
+UPDATE estoques SET saldo=saldo-8
+WHERE produto_id=1 AND deposito=&#39;A&#39; AND saldo&gt;=8 RETURNING *;
+UPDATE estoques SET saldo=saldo-8
+WHERE produto_id=1 AND deposito=&#39;A&#39; AND saldo&gt;=8 RETURNING *;
+ROLLBACK;</code></pre></details>
+<details><summary>Solução N2-2.1</summary><pre><code>-- N2-2.1: NULLIF tamb&#233;m reconhece o email composto s&#243; por espa&#231;os.
+SELECT id,nome,uf,email FROM clientes
+WHERE ativo AND (uf=&#39;PR&#39; OR uf=&#39;SP&#39;)
+AND NULLIF(btrim(email),&#39;&#39;) IS NULL ORDER BY id; -- 4</code></pre></details>
+<details><summary>Solução N2-2.2</summary><pre><code>-- N2-2.2: somas iguais n&#227;o tornam NULL semanticamente igual a zero.
+SELECT COUNT(*) FILTER (WHERE desconto IS NULL) AS desconhecidos,
+ COUNT(*) FILTER (WHERE desconto=0) AS zeros,
+ COUNT(*) FILTER (WHERE desconto&gt;0) AS positivos,
+ SUM(desconto) AS soma_original,SUM(COALESCE(desconto,0)) AS soma_com_zero
+FROM pedidos; -- 3,6,3,40,40</code></pre></details>
+<details><summary>Solução N2-2.3</summary><pre><code>-- N2-2.3: SET LOCAL restaura automaticamente a configura&#231;&#227;o no ROLLBACK.
+BEGIN;
+SET LOCAL TIME ZONE &#39;UTC&#39;;
+SELECT id,ocorrido_em,ocorrido_em AT TIME ZONE &#39;America/Sao_Paulo&#39; AS horario_local
+FROM acessos
+WHERE ocorrido_em &gt;= (TIMESTAMP &#39;2026-03-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+AND ocorrido_em &lt; (TIMESTAMP &#39;2026-04-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+ORDER BY id;
+SET LOCAL TIME ZONE &#39;America/Sao_Paulo&#39;;
+SELECT id,ocorrido_em,ocorrido_em AT TIME ZONE &#39;America/Sao_Paulo&#39; AS horario_local
+FROM acessos
+WHERE ocorrido_em &gt;= (TIMESTAMP &#39;2026-03-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+AND ocorrido_em &lt; (TIMESTAMP &#39;2026-04-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+ORDER BY id;
+ROLLBACK; -- ids 2,3 em ambas; apresenta&#231;&#227;o muda, instantes n&#227;o.</code></pre></details>
+<details><summary>Solução N2-2.4</summary><pre><code>-- N2-2.4: a ordem dos WHEN resolve os limites sem sobreposi&#231;&#227;o.
+SELECT id,nome,preco,CASE WHEN preco&lt;100 THEN &#39;baixo&#39;
+ WHEN preco&lt;=500 THEN &#39;medio&#39; ELSE &#39;alto&#39; END AS faixa
+FROM produtos ORDER BY id;
+WITH faixas AS (
+ SELECT CASE WHEN preco&lt;100 THEN &#39;baixo&#39; WHEN preco&lt;=500 THEN &#39;medio&#39;
+ ELSE &#39;alto&#39; END AS faixa FROM produtos
+)
+SELECT faixa,COUNT(*) FROM faixas GROUP BY faixa ORDER BY faixa;
+SELECT preco,CASE WHEN preco&lt;100 THEN &#39;baixo&#39; WHEN preco&lt;=500 THEN &#39;medio&#39;
+ ELSE &#39;alto&#39; END AS faixa FROM (VALUES (100),(500)) AS limites(preco);</code></pre></details>
+<details><summary>Solução N2-2.5</summary><pre><code>-- N2-2.5: as tr&#234;s consultas respondem perguntas diferentes.
+SELECT id FROM pedidos WHERE desconto&lt;&gt;0 ORDER BY id;
+SELECT id FROM pedidos WHERE desconto IS DISTINCT FROM 0 ORDER BY id;
+SELECT id FROM pedidos WHERE desconto IS DISTINCT FROM 0
+EXCEPT SELECT id FROM pedidos WHERE desconto&lt;&gt;0 ORDER BY id; -- 102,105,108</code></pre></details>
+<details><summary>Solução N2-2.6</summary><pre><code>-- N2-2.6: ! escapa o pr&#243;ximo caractere do padr&#227;o.
+SELECT id,nome FROM produtos WHERE nome LIKE &#39;%!%%&#39; ESCAPE &#39;!&#39; ORDER BY id;
+SELECT id,nome FROM produtos WHERE nome LIKE &#39;%!_%&#39; ESCAPE &#39;!&#39; ORDER BY id;
+SELECT id,nome FROM produtos WHERE nome LIKE &#39;%_%&#39; ORDER BY id;</code></pre></details>
+<details><summary>Solução N2-3.1</summary><pre><code>-- N2-3.1: filtro na CTE preserva os meses vazios do calend&#225;rio.
+WITH meses AS (
+ SELECT generate_series(DATE &#39;2026-01-01&#39;,DATE &#39;2026-06-01&#39;,INTERVAL &#39;1 month&#39;)::date AS mes
+), receita AS (
+ SELECT date_trunc(&#39;month&#39;,data_pedido)::date AS mes,
+ SUM(valor_total-COALESCE(desconto,0)) AS liquido
+ FROM pedidos WHERE status&lt;&gt;&#39;cancelado&#39; GROUP BY 1
+)
+SELECT m.mes,COALESCE(r.liquido,0) AS liquido FROM meses m
+LEFT JOIN receita r USING (mes) ORDER BY m.mes;</code></pre></details>
+<details><summary>Solução N2-3.2</summary><pre><code>-- N2-3.2: uma linha por pedido antes de somar os totais.
+WITH recebidos AS (
+ SELECT pedido_id,SUM(CASE WHEN tipo=&#39;recebimento&#39; THEN valor ELSE -valor END) AS recebido
+ FROM pagamentos GROUP BY pedido_id
+), posicao AS (
+ SELECT p.id,p.valor_total-COALESCE(p.desconto,0) AS contratado,
+ COALESCE(r.recebido,0) AS recebido,
+ p.valor_total-COALESCE(p.desconto,0)-COALESCE(r.recebido,0) AS saldo
+ FROM pedidos p LEFT JOIN recebidos r ON r.pedido_id=p.id WHERE p.status&lt;&gt;&#39;cancelado&#39;
+)
+SELECT *,CASE WHEN saldo&gt;0 THEN &#39;a_receber&#39; WHEN saldo&lt;0 THEN &#39;credito&#39; ELSE &#39;quitado&#39; END AS situacao,
+ SUM(contratado) OVER () AS total_contratado,SUM(recebido) OVER () AS total_recebido,
+ SUM(saldo) OVER () AS saldo_global,
+ SUM(GREATEST(saldo,0)) OVER () AS total_a_receber,
+ SUM(GREATEST(-saldo,0)) OVER () AS total_credito
+FROM posicao ORDER BY id; -- 3060,2730,330,350,20</code></pre></details>
+<details><summary>Solução N2-3.3</summary><pre><code>-- N2-3.3: n&#227;o acrescente cliente_id ao DENSE_RANK se a regra incluir empates de valor.
+WITH totais AS (
+ SELECT date_trunc(&#39;month&#39;,data_pedido)::date AS mes,cliente_id,
+ SUM(valor_total-COALESCE(desconto,0)) AS liquido
+ FROM pedidos WHERE status&lt;&gt;&#39;cancelado&#39; GROUP BY 1,2
+), ranking AS (
+ SELECT *,ROW_NUMBER() OVER (PARTITION BY mes ORDER BY liquido DESC,cliente_id) AS posicao
+ FROM totais
+)
+SELECT * FROM ranking WHERE posicao&lt;=2 ORDER BY mes,posicao;</code></pre></details>
+<details><summary>Solução N2-3.4</summary><pre><code>-- N2-3.4: janela sobre o resultado mensal, incluindo zeros.
+WITH meses AS (
+ SELECT generate_series(DATE &#39;2026-01-01&#39;,DATE &#39;2026-06-01&#39;,INTERVAL &#39;1 month&#39;)::date AS mes
+), receita AS (
+ SELECT date_trunc(&#39;month&#39;,data_pedido)::date AS mes,
+ SUM(valor_total-COALESCE(desconto,0)) AS liquido
+ FROM pedidos WHERE status&lt;&gt;&#39;cancelado&#39; GROUP BY 1
+), calendario AS (
+ SELECT m.mes,COALESCE(r.liquido,0) AS liquido FROM meses m LEFT JOIN receita r USING (mes)
+), janelas AS (
+ SELECT *,SUM(liquido) OVER (ORDER BY mes ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS acumulado,
+ LAG(liquido) OVER (ORDER BY mes) AS anterior FROM calendario
+)
+SELECT *,round(100.0*(liquido-anterior)/NULLIF(anterior,0),2) AS variacao_pct
+FROM janelas ORDER BY mes;</code></pre></details>
+<details><summary>Solução N2-3.5</summary><pre><code>-- N2-3.5: calend&#225;rio de caixa, n&#227;o de compet&#234;ncia.
+WITH meses AS (
+ SELECT generate_series(DATE &#39;2026-01-01&#39;,DATE &#39;2026-06-01&#39;,INTERVAL &#39;1 month&#39;)::date AS mes
+), caixa AS (
+ SELECT date_trunc(&#39;month&#39;,pg.data_pagamento)::date AS mes,
+ COALESCE(SUM(pg.valor) FILTER (WHERE pg.tipo=&#39;recebimento&#39;),0) AS bruto,
+ COALESCE(SUM(pg.valor) FILTER (WHERE pg.tipo=&#39;estorno&#39;),0) AS estorno
+ FROM pagamentos pg JOIN pedidos p ON p.id=pg.pedido_id
+ WHERE p.status&lt;&gt;&#39;cancelado&#39; GROUP BY 1
+)
+SELECT m.mes,COALESCE(c.bruto,0) AS bruto,COALESCE(c.estorno,0) AS estorno,
+ COALESCE(c.bruto-c.estorno,0) AS recebido_liquido,
+ round(100.0*c.estorno/NULLIF(c.bruto,0),2) AS pct_estornado
+FROM meses m LEFT JOIN caixa c USING (mes) ORDER BY m.mes;</code></pre></details>
+<details><summary>Solução N2-3.6</summary><pre><code>-- N2-3.6: separe d&#237;vidas e cr&#233;ditos antes de agregar por cliente.
+WITH recebidos AS (
+ SELECT pedido_id,SUM(CASE WHEN tipo=&#39;recebimento&#39; THEN valor ELSE -valor END) AS recebido
+ FROM pagamentos GROUP BY pedido_id
+), saldos AS (
+ SELECT p.cliente_id,p.valor_total-COALESCE(p.desconto,0)-COALESCE(r.recebido,0) AS saldo
+ FROM pedidos p LEFT JOIN recebidos r ON r.pedido_id=p.id WHERE p.status&lt;&gt;&#39;cancelado&#39;
+)
+SELECT cliente_id,SUM(GREATEST(saldo,0)) AS a_receber,SUM(GREATEST(-saldo,0)) AS credito
+FROM saldos GROUP BY cliente_id HAVING SUM(GREATEST(saldo,0))&gt;0 ORDER BY cliente_id;
+-- Remova somente HAVING para conferir o cr&#233;dito do cliente 3.</code></pre></details>
+<details><summary>Solução N2-4.1</summary><pre><code>-- N2-4.1: COUNT(p.id), n&#227;o COUNT(*), para contar pedidos.
+SELECT c.id,c.nome,COUNT(p.id) AS pedidos,
+ COALESCE(SUM(p.valor_total-COALESCE(p.desconto,0)),0) AS contratado
+FROM clientes c LEFT JOIN pedidos p ON p.cliente_id=c.id AND p.status&lt;&gt;&#39;cancelado&#39;
+GROUP BY c.id,c.nome ORDER BY c.id;</code></pre></details>
+<details><summary>Solução N2-4.2</summary><pre><code>-- N2-4.2: comparar igualdade com NULL n&#227;o produz verdadeiro.
+SELECT c.id,c.nome FROM clientes c WHERE NOT EXISTS (
+ SELECT 1 FROM pedidos p WHERE p.cliente_id=c.id AND p.status&lt;&gt;&#39;cancelado&#39;
+) ORDER BY c.id;
+SELECT id FROM clientes WHERE id NOT IN (SELECT id FROM (VALUES (2),(NULL::integer)) AS lista(id));
+SELECT c.id FROM clientes c WHERE NOT EXISTS (
+ SELECT 1 FROM (VALUES (2),(NULL::integer)) AS lista(id) WHERE lista.id=c.id
+) ORDER BY c.id;</code></pre></details>
+<details><summary>Solução N2-4.3</summary><pre><code>-- N2-4.3: duas rela&#231;&#245;es 1:N produzem multiplica&#231;&#227;o antes do GROUP BY.
+SELECT COUNT(*) AS linhas,SUM(i.quantidade*i.preco_unitario) AS itens_inflados,
+ SUM(CASE WHEN pg.tipo=&#39;recebimento&#39; THEN pg.valor ELSE -pg.valor END) AS recebido_inflado
+FROM pedidos p JOIN itens i ON i.pedido_id=p.id JOIN pagamentos pg ON pg.pedido_id=p.id
+WHERE p.id=101; -- 4,500,480
+WITH ti AS (
+ SELECT pedido_id,SUM(quantidade*preco_unitario) AS bruto_itens FROM itens GROUP BY pedido_id
+), rp AS (
+ SELECT pedido_id,SUM(CASE WHEN tipo=&#39;recebimento&#39; THEN valor ELSE -valor END) AS recebido
+ FROM pagamentos GROUP BY pedido_id
+)
+SELECT p.id,ti.bruto_itens,COALESCE(rp.recebido,0) AS recebido,
+ p.valor_total-COALESCE(p.desconto,0) AS contratado
+FROM pedidos p LEFT JOIN ti ON ti.pedido_id=p.id LEFT JOIN rp ON rp.pedido_id=p.id WHERE p.id=101;
+-- DISTINCT descartaria tamb&#233;m valores iguais leg&#237;timos em outras cargas.</code></pre></details>
+<details><summary>Solução N2-4.4</summary><pre><code>-- N2-4.4: LEFT JOIN LATERAL e alternativa equivalente por janela.
+SELECT c.id AS cliente_id,ult.id AS pedido_id,ult.data_pedido
+FROM clientes c LEFT JOIN LATERAL (
+ SELECT p.id,p.data_pedido FROM pedidos p WHERE p.cliente_id=c.id
+ ORDER BY p.data_pedido DESC,p.id DESC LIMIT 1
+) ult ON true ORDER BY c.id;
+WITH ordenados AS (
+ SELECT *,ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY data_pedido DESC,id DESC) AS rn FROM pedidos
+)
+SELECT c.id AS cliente_id,p.id AS pedido_id,p.data_pedido
+FROM clientes c LEFT JOIN ordenados p ON p.cliente_id=c.id AND p.rn=1 ORDER BY c.id;
+-- Para provar equival&#234;ncia em SQL, envolva as duas vers&#245;es (sem ORDER BY) em CTEs
+-- a e b e execute (SELECT * FROM a EXCEPT SELECT * FROM b)
+-- UNION ALL (SELECT * FROM b EXCEPT SELECT * FROM a): zero linhas.</code></pre></details>
+<details><summary>Solução N2-4.5</summary><pre><code>-- N2-4.5: fontes simuladas; nenhuma altera&#231;&#227;o real.
+WITH cabecalhos AS (
+ SELECT id,valor_total+CASE WHEN id=101 THEN 1 ELSE 0 END AS bruto
+ FROM pedidos WHERE id&lt;&gt;111
+), totais_itens AS (
+ SELECT pedido_id,SUM(quantidade*preco_unitario) AS bruto
+ FROM itens WHERE pedido_id&lt;&gt;112 GROUP BY pedido_id
+)
+SELECT COALESCE(c.id,i.pedido_id) AS pedido_id,c.bruto AS cabecalho,i.bruto AS itens,
+ c.bruto-i.bruto AS diferenca,
+ CASE WHEN c.id IS NULL THEN &#39;somente_itens&#39;
+ WHEN i.pedido_id IS NULL THEN &#39;somente_cabecalho&#39; ELSE &#39;valor_divergente&#39; END AS motivo
+FROM cabecalhos c FULL JOIN totais_itens i ON i.pedido_id=c.id
+WHERE c.bruto IS DISTINCT FROM i.bruto ORDER BY pedido_id;</code></pre></details>
+<details><summary>Solução N2-4.6</summary><pre><code>-- N2-4.6: escrita somente no cadastro; sempre desfazer ao final.
+BEGIN;
+SELECT SUM(i.quantidade*i.preco_unitario) AS historico,SUM(i.quantidade*p.preco) AS atual
+FROM itens i JOIN produtos p ON p.id=i.produto_id WHERE i.pedido_id=101;
+UPDATE produtos SET preco=60 WHERE id=1;
+SELECT SUM(i.quantidade*i.preco_unitario) AS historico,SUM(i.quantidade*p.preco) AS atual
+FROM itens i JOIN produtos p ON p.id=i.produto_id WHERE i.pedido_id=101;
+ROLLBACK;</code></pre></details>
+<details><summary>Solução N2-5.1</summary><pre><code>-- N2-5.1: primeiro execute 02_Preparacao_Desempenho.sql.
+-- REPITA CADA EXPLAIN 3 VEZES e salve os nove planos ANTES de N2-5.2.
+SELECT version();
+SELECT indexname,indexdef FROM pg_indexes WHERE schemaname=&#39;bdadosql_n2&#39; AND tablename=&#39;eventos&#39;;
+SELECT pg_table_size(&#39;bdadosql_n2.eventos&#39;) AS tabela_bytes,
+ pg_indexes_size(&#39;bdadosql_n2.eventos&#39;) AS indices_bytes;
+ANALYZE eventos;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE cliente_id=42 AND data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos;</code></pre></details>
+<details><summary>Solução N2-5.2</summary><pre><code>-- N2-5.2: ap&#243;s cria&#231;&#227;o, repetir CADA EXPLAIN de N2-5.1 tr&#234;s vezes.
+CREATE INDEX n2_eventos_cliente_data_idx ON eventos (cliente_id,data_evento);
+-- Execute novamente as tr&#234;s consultas EXPLAIN de N2-5.1, sem recriar a base.
+SELECT pg_size_pretty(pg_relation_size(&#39;bdadosql_n2.n2_eventos_cliente_data_idx&#39;)) AS tamanho_indice;</code></pre></details>
+<details><summary>Solução N2-5.3</summary><pre><code>-- N2-5.3: executar EXPLAIN tr&#234;s vezes antes, criar &#237;ndice, repetir tr&#234;s vezes.
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE status=&#39;pendente&#39; AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;
+ORDER BY data_evento,id LIMIT 50;
+CREATE INDEX n2_eventos_pendentes_idx ON eventos (data_evento,id) WHERE status=&#39;pendente&#39;;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE status=&#39;pendente&#39; AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;
+ORDER BY data_evento,id LIMIT 50;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE status=&#39;pago&#39; AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;
+ORDER BY data_evento,id LIMIT 50;
+SELECT COUNT(*) FROM eventos WHERE status=&#39;pendente&#39;
+AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;; -- 4000
+SELECT indexrelname,pg_size_pretty(pg_relation_size(indexrelid)) AS tamanho
+FROM pg_stat_user_indexes WHERE schemaname=&#39;bdadosql_n2&#39; AND relname=&#39;eventos&#39;;</code></pre></details>
+<details><summary>Solução N2-5.4</summary><pre><code>-- N2-5.4: tr&#234;s execu&#231;&#245;es antes/depois; preserve o mesmo SELECT *.
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE lower(email)=&#39;cliente42@example.test&#39;;
+CREATE INDEX n2_eventos_email_lower_idx ON eventos (lower(email));
+ANALYZE eventos;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE lower(email)=&#39;cliente42@example.test&#39;;
+SELECT id FROM eventos WHERE lower(email)=&#39;cliente42@example.test&#39; ORDER BY id; -- 300 ids</code></pre></details>
+<details><summary>Solução N2-5.5</summary><pre><code>-- N2-5.5: compare a estimativa ANTES de criar o objeto de estat&#237;sticas.
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE uf=&#39;PR&#39; AND cidade=&#39;Curitiba&#39;;
+SELECT attname,null_frac,n_distinct,most_common_vals,most_common_freqs,histogram_bounds,correlation
+FROM pg_stats WHERE schemaname=&#39;bdadosql_n2&#39; AND tablename=&#39;eventos&#39;
+AND attname IN (&#39;cliente_id&#39;,&#39;uf&#39;,&#39;cidade&#39;) ORDER BY attname;
+SELECT uf,cidade,COUNT(*) FROM eventos GROUP BY uf,cidade ORDER BY uf,cidade;
+CREATE STATISTICS bdadosql_n2.n2_eventos_uf_cidade_stats (dependencies) ON uf,cidade FROM eventos;
+ANALYZE eventos;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE uf=&#39;PR&#39; AND cidade=&#39;Curitiba&#39;;
+SELECT statistics_name,attnames,kinds,dependencies FROM pg_stats_ext
+WHERE schemaname=&#39;bdadosql_n2&#39; AND tablename=&#39;eventos&#39;;</code></pre></details>
+<details><summary>Solução N2-5.6</summary><pre><code>-- N2-5.6: c&#243;pia independente; s&#243; criar uma vez.
+CREATE TABLE eventos_fisicos AS SELECT * FROM eventos;
+CREATE INDEX n2_fisicos_cliente_data_idx ON eventos_fisicos (cliente_id,data_evento);
+ANALYZE eventos_fisicos;
+SELECT correlation FROM pg_stats WHERE schemaname=&#39;bdadosql_n2&#39;
+AND tablename=&#39;eventos_fisicos&#39; AND attname=&#39;cliente_id&#39;;
+-- Medir tr&#234;s vezes ANTES do CLUSTER:
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos_fisicos
+WHERE cliente_id=42 AND data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+CLUSTER bdadosql_n2.eventos_fisicos USING n2_fisicos_cliente_data_idx;
+ANALYZE eventos_fisicos;
+-- Medir tr&#234;s vezes DEPOIS do CLUSTER:
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos_fisicos
+WHERE cliente_id=42 AND data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+SELECT correlation FROM pg_stats WHERE schemaname=&#39;bdadosql_n2&#39;
+AND tablename=&#39;eventos_fisicos&#39; AND attname=&#39;cliente_id&#39;;
+UPDATE eventos_fisicos SET status=&#39;revisado&#39; WHERE id&lt;=60000; -- 60000
+DELETE FROM eventos_fisicos WHERE id&gt;270000; -- 30000
+SELECT COUNT(*) AS total,COUNT(*) FILTER (WHERE status=&#39;revisado&#39;) AS revisados,
+ COUNT(*) FILTER (WHERE id&gt;270000) AS acima_limite FROM eventos_fisicos; -- 270000,60000,0
+SELECT pg_table_size(&#39;bdadosql_n2.eventos_fisicos&#39;) AS tabela_bytes,
+ pg_indexes_size(&#39;bdadosql_n2.eventos_fisicos&#39;) AS indices_bytes,
+ pg_total_relation_size(&#39;bdadosql_n2.eventos_fisicos&#39;) AS total_bytes;
+-- Execute SOMENTE este comando, em Auto-commit, sem transa&#231;&#227;o pendente:
+VACUUM (VERBOSE, ANALYZE) bdadosql_n2.eventos_fisicos;
+-- Repita a consulta de tamanhos acima e salve as mensagens do VACUUM.
+-- Extens&#227;o OPCIONAL, executar isoladamente e somente na c&#243;pia:
+-- VACUUM FULL bdadosql_n2.eventos_fisicos;
+-- ANALYZE bdadosql_n2.eventos_fisicos;
+-- Repita a consulta de tamanhos; n&#227;o confunda este estado com a linha de base.</code></pre></details>
+</main><footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer></body></html>

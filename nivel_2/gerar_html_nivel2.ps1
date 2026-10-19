@@ -10,7 +10,7 @@ $body = [Collections.Generic.List[string]]::new()
 $body.Add('<main>')
 $inCode = $false
 $inTable = $false
-$inList = $false
+$inList = ''
 foreach ($line in [IO.File]::ReadAllLines((Join-Path $base '01_Laboratorios_Nivel2.md'), [Text.Encoding]::UTF8)) {
     if ($line.StartsWith('```')) {
         if ($inCode) { $body.Add('</code></pre>') } else { $body.Add('<pre><code>') }
@@ -18,7 +18,10 @@ foreach ($line in [IO.File]::ReadAllLines((Join-Path $base '01_Laboratorios_Nive
         continue
     }
     if ($inCode) { $body.Add([Net.WebUtility]::HtmlEncode($line)); continue }
-    if ($inList -and $line -notmatch '^(- |\d+\. )') { $body.Add('</ul>'); $inList=$false }
+    $nextList = ''
+    if ($line -match '^\d+\. ') { $nextList = 'ol' }
+    elseif ($line.StartsWith('- ')) { $nextList = 'ul' }
+    if ($inList -and $inList -ne $nextList) { $body.Add('</'+$inList+'>'); $inList='' }
     if ($inTable -and -not $line.StartsWith('|')) { $body.Add('</tbody></table></div>'); $inTable=$false }
     if ($line.StartsWith('|')) {
         if ($line -match '^\|[-| ]+\|$') { continue }
@@ -37,11 +40,11 @@ foreach ($line in [IO.File]::ReadAllLines((Join-Path $base '01_Laboratorios_Nive
         if ($title -match '^(N2-\d+(?:\.\d+)?) ') { $anchor=' id="'+$Matches[1]+'"' }
         $body.Add('<h'+$level+$anchor+'>'+(Inline $title)+'</h'+$level+'>')
     } elseif ($line -match '^(?:- |\d+\. )(.+)$') {
-        if (-not $inList) { $body.Add('<ul>'); $inList=$true }
+        if (-not $inList) { $inList=$nextList; $body.Add('<'+$inList+'>') }
         $body.Add('<li>'+(Inline $Matches[1])+'</li>')
     } elseif ($line.Trim()) { $body.Add('<p>'+(Inline $line)+'</p>') }
 }
-if ($inList) { $body.Add('</ul>') }
+if ($inList) { $body.Add('</'+$inList+'>') }
 if ($inTable) { $body.Add('</tbody></table></div>') }
 $body.Add('<h2 id="solucoes">Soluções comentadas — consulte após tentar</h2><p>Abra somente a tarefa que está corrigindo. Não execute o arquivo completo de soluções. Os erros intencionais estão comentados; execute-os separadamente.</p>')
 $solutions = [IO.File]::ReadAllText((Join-Path $base '03_Solucoes_Nivel2.sql'), [Text.Encoding]::UTF8)

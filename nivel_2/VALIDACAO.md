@@ -20,3 +20,5 @@ O ambiente embutido permite validar execução SQL e resultados. **Não represen
 A versão HTML contém os 30 enunciados e as 30 soluções geradas a partir das fontes. Uma conferência de DOM verificou as contagens, unicidade dos identificadores, âncoras internas, existência dos destinos dos links locais e preservação das 100 questões no HTML do nível 1. Não foi realizada inspeção visual em navegador.
 
 Os arquivos do nível 1 permanecem como trilha inicial; suas alterações nesta edição se limitam aos links e à identificação da nova trilha.
+
+Na revisão didática, os 30 enunciados receberam contexto, objetivo, dados de partida, passos, dica e conferência. Foram verificados os seis componentes em cada tarefa, a numeração dos passos no HTML e a correspondência das 30 soluções incorporadas com o arquivo SQL. Os preparadores, soluções SQL e resultados esperados não foram alterados nessa revisão; não foram repetidas medições de desempenho.

@@ -176,6 +176,8 @@ Pré-requisitos novos: PRIMARY KEY, CHECK, BEGIN/COMMIT/ROLLBACK, SAVEPOINT, CTE
 
 **Dados de partida:** importacao_contatos contém sete linhas. lote_id identifica a entrada do arquivo; cliente_id identifica a pessoa. Não altere essa tabela: ela é sua evidência do que foi recebido.
 
+**Prática complementar:** o [laboratório extra de expressões regulares POSIX](extra_regex_posix/Laboratorio_Regex_POSIX.html) apresenta 12 exercícios graduais para entender e testar o filtro de email, limpar textos, extrair grupos e escrever um diagnóstico. Tem carga própria e ajudas recolhidas; no GitHub, consulte o [roteiro do extra](extra_regex_posix/01_Laboratorio_Regex.md).
+
 **Passo a passo:**
 
 1. Faça um SELECT do lote original. Em outro SELECT, mostre nome sem espaços nas pontas, email em minúsculas sem espaços e UF em maiúsculas.

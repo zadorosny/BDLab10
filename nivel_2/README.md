@@ -15,6 +15,9 @@ Cada exercício também tem **Ver uma solução possível**, com o SQL comentado
 | N2-3 | Relatórios financeiros, créditos, ranking e acumulados | 6 |
 | N2-4 | Ausência de registros, cardinalidade e reconciliação | 6 |
 | N2-5 | Índices compostos, parciais e de expressão; estatísticas e manutenção | 6 |
+| Extra RX | Expressões regulares POSIX: busca, limpeza, grupos e diagnóstico | 12 |
+
+Além dos 30 desafios principais, o [extra de regex POSIX](extra_regex_posix/README.md) acrescenta 12 exercícios graduais e uma carga independente. Pode ser feito depois de N2-1.4. Abra `extra_regex_posix/Laboratorio_Regex_POSIX.html` e siga o preparador próprio; todas as soluções do extra são consultas de leitura.
 
 No Windows, baixe e extraia o repositório; abra **Laboratorios_Nivel2.html** no navegador. No GitHub, leia o mesmo conteúdo em [01_Laboratorios_Nivel2.md](01_Laboratorios_Nivel2.md). Os exercícios são executados pelo DBeaver conectado ao PostgreSQL da VM; não é necessário WSL nem Bash.
 

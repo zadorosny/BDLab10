@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BDLab10 — Extra de expressões regulares POSIX</title>
+<style>
+:root{color-scheme:dark;background:#0d1117;color:#e6edf3}*{box-sizing:border-box}body{font:16px/1.7 "Segoe UI",Arial,sans-serif;max-width:1100px;margin:0 auto;padding:28px}a{color:#8dcaff}a:focus-visible,summary:focus-visible{outline:3px solid #8dcaff;outline-offset:4px}nav{padding:18px;border:1px solid #364456;border-radius:10px;background:#182230;display:flex;flex-wrap:wrap;gap:12px 20px}h1{font-size:2rem}h1,h2,h3{color:#a6d5ff;line-height:1.35}h2{margin-top:2.5em;border-top:1px solid #364456;padding-top:24px}h3{margin-top:2em;scroll-margin-top:20px}p,li{max-width:95ch}li{margin:10px 0}code{font-family:Consolas,monospace;background:#203149;padding:2px 4px;border-radius:3px}pre{background:#161f2b;border:1px solid #364456;padding:18px;overflow:auto;font-size:14px;line-height:1.6}pre code{padding:0;background:transparent}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #364456;padding:10px;text-align:left}th{background:#203149}details{margin:16px 0;border:1px solid #364456;border-radius:8px;padding:14px}summary{cursor:pointer;color:#a6d5ff;font-weight:600}.intro{padding:16px;border-left:4px solid #8dcaff;background:#182230}footer{margin-top:40px;color:#b4c0cf}@media(max-width:600px){body{padding:16px}h1{font-size:1.6rem}}@media print{:root{color-scheme:light;background:white;color:black}body{max-width:none;padding:0;font-size:10pt}nav{display:none}h1,h2,h3,a,summary{color:#163b59}h2,h3{break-after:avoid}pre,code,th,.intro{background:#f0f3f6;color:black}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{break-inside:avoid}a{overflow-wrap:anywhere}@page{size:A4;margin:18mm}}
+</style></head><body>
+<nav aria-label="Navegação do laboratório"><a href="#RX-01">1–3 · Fundamentos</a><a href="#RX-04">4–6 · Validação</a><a href="#RX-07">7–10 · Transformação</a><a href="#RX-11">11–12 · Diagnóstico</a><a href="#solucoes">Soluções</a><a href="../Laboratorios_Nivel2.html#N2-1.4">Voltar ao N2-1.4</a></nav>
+<p class="intro">Extra do nível 2 · 12 exercícios · DBeaver no Windows + PostgreSQL na VM. Abra o preparador uma vez; os exercícios são somente leitura. As quatro ajudas de cada exercício começam recolhidas. Esta página funciona offline e não executa SQL nem salva progresso.</p>
+<main>
+<h1>Laborat&#243;rio extra — Express&#245;es regulares POSIX</h1>
+<p><strong>Cen&#225;rio:</strong> a equipe de cadastro da Loja Horizonte recebeu outro arquivo de contatos. Antes de import&#225;-lo, voc&#234; precisa reconhecer padr&#245;es, apresentar os dados padronizados e explicar os problemas encontrados. O objetivo &#233; aprender a construir e testar uma express&#227;o, e n&#227;o decorar um regex de email.</p>
+<p>S&#227;o <strong>12 exerc&#237;cios graduais</strong>, com dados pr&#243;prios. Este extra pode ser feito logo depois de <strong>N2-1.4 — Diagnosticar o lote bruto</strong>, ou de forma independente. Basta conhecer SELECT, WHERE e ORDER BY; CASE e as etapas com WITH s&#227;o explicados quando necess&#225;rios.</p>
+<p>Abra <strong>Laboratorio_Regex_POSIX.html</strong> no navegador do Windows e execute o SQL no DBeaver conectado ao PostgreSQL 18 da VM Hyper-V. O HTML funciona offline; o SQL &#233; executado no servidor. Reserve duas ou tr&#234;s sess&#245;es curtas, conforme seu ritmo.</p>
+<p>Em cada exerc&#237;cio, situa&#231;&#227;o, objetivo e dados de partida ficam vis&#237;veis. <strong>Passo a passo</strong>, <strong>dica</strong>, <strong>confer&#234;ncia</strong> e <strong>solu&#231;&#227;o poss&#237;vel</strong> come&#231;am recolhidos no HTML. Abra somente a ajuda de que precisar. Registre o SQL, a sa&#237;da e uma explica&#231;&#227;o curta antes de consultar a solu&#231;&#227;o.</p>
+<h2>Prepare e conhe&#231;a a carga</h2>
+<ol>
+<li>No DBeaver, confirme o banco de treinamento com <code>SELECT current_database(), current_user, version();</code>.</li>
+<li>Abra <a href="00_Preparacao_Regex.sql">00_Preparacao_Regex.sql</a> e execute o arquivo inteiro <strong>uma vez</strong>. Use Auto-commit ativo; o arquivo controla seu pr&#243;prio BEGIN/COMMIT.</li>
+<li>Confira o resultado final: <strong>12 linhas</strong>. O preparador cria o schema independente <code>bdadosql_regex</code>; n&#227;o depende das cargas anteriores.</li>
+<li>Se o preparador falhar, interrompa, execute ROLLBACK e examine a mensagem. Se o schema j&#225; existir, confira a carga anterior; o script n&#227;o reinicia nem apaga os dados.</li>
+<li>Use nomes qualificados, como <code>bdadosql_regex.importacao_contatos</code>, nas suas consultas. Assim, uma mudan&#231;a de search_path n&#227;o seleciona a tabela hom&#244;nima de outro laborat&#243;rio.</li>
+<li>Todos os exerc&#237;cios s&#227;o resolvidos com <strong>SELECT</strong>. Voc&#234; pode repeti-los sem restaurar a carga. Preserve os valores originais como evid&#234;ncia.</li>
+</ol>
+<pre><code>
+SELECT *
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+</code></pre>
+<div class="table-wrap"><table><thead><tr>
+<th scope="col">Campo</th>
+<th scope="col">O que representa</th>
+</tr></thead><tbody>
+<tr>
+<td>id</td>
+<td>A linha do arquivo, usada para identificar evid&#234;ncias</td>
+</tr>
+<tr>
+<td>nome</td>
+<td>Nome recebido, incluindo brancos extras</td>
+</tr>
+<tr>
+<td>email</td>
+<td>Endere&#231;o recebido; pode estar vazio ou ser NULL</td>
+</tr>
+<tr>
+<td>telefone</td>
+<td>Texto recebido, com ou sem pontua&#231;&#227;o</td>
+</tr>
+<tr>
+<td>uf</td>
+<td>Sigla informada pela outra equipe</td>
+</tr>
+<tr>
+<td>codigo</td>
+<td>Identificador externo, cujo padr&#227;o esperado ser&#225; definido no exerc&#237;cio</td>
+</tr>
+<tr>
+<td>observacao</td>
+<td>Texto livre que pode mencionar pedidos</td>
+</tr>
+</tbody></table></div>
+<p>Os nomes de Carla e Iara cont&#234;m, respectivamente, uma tabula&#231;&#227;o e uma quebra de linha reais. No script, <code>E&#39;\t&#39;</code> e <code>E&#39;\n&#39;</code> representam esses caracteres. Dependendo da grade do DBeaver, eles podem parecer espa&#231;os ou uma c&#233;lula com v&#225;rias linhas.</p>
+<h2>Guia de consulta</h2>
+<p>Uma express&#227;o regular descreve um padr&#227;o de texto. No PostgreSQL, coloque o padr&#227;o entre aspas simples:</p>
+<pre><code>
+SELECT &#39;pedido 123&#39; ~ &#39;[[:digit:]]+&#39; AS encontrou_numero;
+</code></pre>
+<div class="table-wrap"><table><thead><tr>
+<th scope="col">Recurso</th>
+<th scope="col">Leitura</th>
+</tr></thead><tbody>
+<tr>
+<td><code>~</code> / <code>~*</code></td>
+<td>Corresponde, distinguindo / ignorando mai&#250;sculas</td>
+</tr>
+<tr>
+<td><code>!~</code> / <code>!~*</code></td>
+<td>N&#227;o corresponde, distinguindo / ignorando mai&#250;sculas</td>
+</tr>
+<tr>
+<td><code>^</code> / <code>$</code></td>
+<td>In&#237;cio / fim do texto</td>
+</tr>
+<tr>
+<td><code>[[:digit:]]</code></td>
+<td>Um d&#237;gito</td>
+</tr>
+<tr>
+<td><code>[[:space:]]</code></td>
+<td>Um branco, inclusive tabula&#231;&#227;o e quebra de linha</td>
+</tr>
+<tr>
+<td><code>[^[:space:]@]</code></td>
+<td>Um caractere que n&#227;o seja branco nem arroba</td>
+</tr>
+<tr>
+<td><code>.</code> / <code>[.]</code></td>
+<td>Um caractere qualquer / um ponto literal</td>
+</tr>
+<tr>
+<td><code>+</code> / <code>*</code> / <code>?</code></td>
+<td>Uma ou mais / zero ou mais / zero ou uma repeti&#231;&#227;o</td>
+</tr>
+<tr>
+<td><code>{3}</code> / <code>{2,}</code> / <code>{10,11}</code></td>
+<td>Exatamente 3 / pelo menos 2 / de 10 a 11 repeti&#231;&#245;es</td>
+</tr>
+<tr>
+<td><code>(...)</code></td>
+<td>Agrupamento e captura</td>
+</tr>
+</tbody></table></div>
+<p>A barra vertical entre alternativas significa “ou”. Sem &#226;ncoras, o padr&#227;o pode corresponder a um trecho. O PostgreSQL usa por padr&#227;o uma vers&#227;o estendida, chamada ARE; aqui praticamos os recursos POSIX e as fun&#231;&#245;es SQL que os utilizam. Consulte a <a href="https://www.postgresql.org/docs/18/functions-matching.html#FUNCTIONS-POSIX-REGEXP">documenta&#231;&#227;o de express&#245;es regulares</a>.</p>
+<p>Para a limpeza, <code>btrim</code> remove espa&#231;os das extremidades, <code>lower</code> e <code>upper</code> padronizam letras, e <code>NULLIF(valor, &#39;&#39;)</code> transforma texto vazio em NULL. <code>btrim</code> sem segundo argumento n&#227;o remove toda esp&#233;cie de branco; o RX-07 trata tabula&#231;&#245;es e quebras de linha antes dessa etapa. Veja as <a href="https://www.postgresql.org/docs/18/functions-string.html">fun&#231;&#245;es de texto</a>.</p>
+<p>Uma regex testa uma regra. “Passou na regra” n&#227;o significa “o dado existe no mundo real” nem “todas as regras de neg&#243;cio foram verificadas”. Nos exerc&#237;cios, voc&#234; vai encontrar um exemplo concreto dessa diferen&#231;a.</p>
+<h2>Exerc&#237;cios</h2>
+<h3 id="RX-01">RX-01 — Encontrar texto dentro de um nome</h3>
+<p><strong>Situa&#231;&#227;o:</strong> o atendimento procura contatos relacionados ao nome Ana. O arquivo mistura mai&#250;sculas e min&#250;sculas; uma busca por um trecho pode trazer pessoas com outros nomes.</p>
+<p><strong>Seu objetivo:</strong> comparar os quatro operadores de correspond&#234;ncia e explicar por que Mariana aparece em uma busca por <code>ana</code>.</p>
+<p><strong>Dados de partida:</strong> consulte <code>id</code> e <code>nome</code> nas 12 linhas, mantendo o texto original.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Acrescente ao SELECT uma coluna com <code>nome ~ &#39;ana&#39;</code>.</li>
+<li>Acrescente outra com <code>nome ~* &#39;ana&#39;</code> e compare os resultados por id.</li>
+<li>Acrescente os testes com <code>!~</code> e <code>!~*</code>.</li>
+<li>Anote os ids que passaram em cada busca positiva e explique a diferen&#231;a entre procurar um trecho e procurar um nome inteiro.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>os operadores podem aparecer como colunas do SELECT antes de serem usados no WHERE. D&#234; um nome a cada coluna com AS; a grade mostrar&#225; verdadeiro ou falso.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p><code>~ &#39;ana&#39;</code> passa somente no id 3. <code>~* &#39;ana&#39;</code> passa nos ids 1, 2, 3 e 4. Nos nomes n&#227;o nulos desta carga, os dois operadores negativos produzem o inverso dos respectivos positivos. Mariana cont&#233;m o trecho ana, mesmo que ele n&#227;o seja seu primeiro nome.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-01"><summary>Ver uma solução possível — RX-01</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-01: procurar texto e comparar mai&#250;sculas e min&#250;sculas
+SELECT id, nome,
+       nome ~ &#39;ana&#39; AS encontra_exato,
+       nome ~* &#39;ana&#39; AS encontra_sem_distinguir_caixa,
+       nome !~ &#39;ana&#39; AS nao_encontra_exato,
+       nome !~* &#39;ana&#39; AS nao_encontra_sem_distinguir_caixa
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- ~: id 3. ~*: ids 1, 2, 3, 4. Mariana tamb&#233;m cont&#233;m &quot;ana&quot;.
+-- !~ e !~* negam o teste; n&#227;o alteram o texto.</code></pre></details>
+<h3 id="RX-02">RX-02 — Separar Ana, Anabela e Mariana</h3>
+<p><strong>Situa&#231;&#227;o:</strong> a primeira busca trouxe contatos demais. Agora o atendimento quer Ana como primeiro nome, aceitando sobrenome depois, mas sem incluir Anabela ou Mariana.</p>
+<p><strong>Seu objetivo:</strong> construir tr&#234;s testes: ocorr&#234;ncia em qualquer posi&#231;&#227;o, ocorr&#234;ncia no in&#237;cio e primeiro nome exatamente Ana.</p>
+<p><strong>Dados de partida:</strong> use <code>btrim(nome)</code> para desconsiderar os espa&#231;os nas extremidades. Ignore diferen&#231;as entre mai&#250;sculas e min&#250;sculas.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Repita a busca por ana sem &#226;ncoras.</li>
+<li>Acrescente a &#226;ncora de in&#237;cio ao padr&#227;o e observe quem deixa de passar.</li>
+<li>Depois de ana, exija um branco ou o fim do texto, agrupando as duas alternativas.</li>
+<li>Teste separadamente os textos Ana e Ana Silva com um padr&#227;o que exija Ana como texto inteiro.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>pense na regra em partes: in&#237;cio, letras ana, depois um branco OU fim. Use par&#234;nteses para manter as alternativas juntas.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>a busca sem &#226;ncora passa nos ids 1, 2, 3 e 4; com in&#237;cio, nos ids 1, 2 e 4; com primeiro nome Ana, somente nos ids 1 e 2. O teste de texto inteiro aceita Ana e rejeita Ana Silva.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-02"><summary>Ver uma solução possível — RX-02</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-02: encontrar Ana como primeiro nome, e n&#227;o dentro de outra palavra
+SELECT id, btrim(nome) AS nome,
+       btrim(nome) ~* &#39;ana&#39; AS em_qualquer_posicao,
+       btrim(nome) ~* &#39;^ana&#39; AS no_inicio,
+       btrim(nome) ~* &#39;^ana([[:space:]]|$)&#39; AS primeiro_nome_ana
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- Qualquer posi&#231;&#227;o: 1,2,3,4. In&#237;cio: 1,2,4. Primeiro nome: 1,2.
+-- Depois de &quot;ana&quot;, o grupo exige um branco OU o fim do texto.
+SELECT &#39;Ana&#39; ~* &#39;^ana$&#39; AS nome_inteiro_ana,
+       &#39;Ana Silva&#39; ~* &#39;^ana$&#39; AS nome_composto_nao_e_igual;</code></pre></details>
+<h3 id="RX-03">RX-03 — Detectar brancos que a tela pode esconder</h3>
+<p><strong>Situa&#231;&#227;o:</strong> a equipe percebe nomes desalinhados, mas olhar a grade n&#227;o basta para saber se h&#225; um espa&#231;o, v&#225;rios espa&#231;os ou outro tipo de branco.</p>
+<p><strong>Seu objetivo:</strong> localizar nomes com qualquer branco e nomes com pelo menos dois brancos consecutivos. Depois, comparar zero ou mais repeti&#231;&#245;es com uma ou mais.</p>
+<p><strong>Dados de partida:</strong> use os nomes originais. Os ids 6 e 12 t&#234;m tabula&#231;&#227;o e quebra de linha.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Exiba uma coluna que teste a presen&#231;a de <code>[[:space:]]</code>.</li>
+<li>Exiba outra que exija pelo menos duas ocorr&#234;ncias consecutivas dessa classe.</li>
+<li>Em um SELECT separado, teste a string vazia contra padr&#245;es ancorados que aceitem somente brancos: um com asterisco e outro com mais.</li>
+<li>Teste tamb&#233;m uma tabula&#231;&#227;o e uma quebra de linha usando o padr&#227;o com mais.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p><code>{2,}</code> significa pelo menos duas repeti&#231;&#245;es do elemento anterior. Para representar texto vazio em SQL, use <code>&#39;&#39;</code>. O <code>+</code> e o <code>*</code> n&#227;o t&#234;m o mesmo comportamento diante desse texto.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>h&#225; algum branco nos ids 1, 2, 3, 4, 6, 7 e 12; h&#225; pelo menos dois consecutivos nos ids 1 e 7. O padr&#227;o ancorado com asterisco aceita vazio; o equivalente com mais rejeita. Tabula&#231;&#227;o e quebra de linha passam no teste de brancos.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-03"><summary>Ver uma solução possível — RX-03</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-03: investigar espa&#231;os em branco e repeti&#231;&#245;es
+SELECT id, nome,
+       nome ~ &#39;[[:space:]]&#39; AS tem_branco,
+       nome ~ &#39;[[:space:]]{2,}&#39; AS tem_brancos_consecutivos
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- Brancos: 1,2,3,4,6,7,12. Dois ou mais consecutivos: 1,7.
+SELECT &#39;&#39; ~ &#39;^[[:space:]]*$&#39; AS asterisco_aceita_vazio,
+       &#39;&#39; ~ &#39;^[[:space:]]+$&#39; AS mais_exige_um,
+       E&#39;\t&#39; ~ &#39;^[[:space:]]+$&#39; AS tabulacao_e_branco,
+       E&#39;\n&#39; ~ &#39;^[[:space:]]+$&#39; AS quebra_e_branco;</code></pre></details>
+<h3 id="RX-04">RX-04 — Reconstruir o regex de email</h3>
+<p><strong>Situa&#231;&#227;o:</strong> voc&#234; encontrou o regex do N2-1.4, mas precisa explicar cada parte antes de us&#225;-lo no diagn&#243;stico. H&#225; tamb&#233;m emails ausentes, que a equipe quer contar separadamente.</p>
+<p><strong>Seu objetivo:</strong> classificar cada email como ausente, passa no formato ou fora do formato, mostrando o original e a vers&#227;o normalizada.</p>
+<p><strong>Dados de partida:</strong> use a regra did&#225;tica <code>^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$</code>. Considere NULL, texto vazio e texto composto somente de espa&#231;os comuns como ausentes. N&#227;o retire espa&#231;os internos do email.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Escreva uma frase explicando cada trecho do padr&#227;o: in&#237;cio, trecho sem branco nem arroba, arroba, outro trecho, ponto literal, trecho final e fim.</li>
+<li>Exiba o email original e <code>NULLIF(lower(btrim(email)), &#39;&#39;)</code>.</li>
+<li>Teste o padr&#227;o sobre o original e classifique a vers&#227;o normalizada com CASE, verificando a aus&#234;ncia antes do formato.</li>
+<li>Observe os ids 1, 8 e 9. Explique o papel da limpeza, do NULL e a limita&#231;&#227;o revelada pelos dois pontos seguidos.</li>
+<li>Em outro SELECT, compare <code>NULL::text ~ &#39;abc&#39;</code> e <code>NULL::text !~ &#39;abc&#39;</code>.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>dentro de <code>[^...]</code>, o circunflexo significa exclus&#227;o; no in&#237;cio do padr&#227;o, significa in&#237;cio do texto. CASE escolhe uma resposta: <code>CASE WHEN condi&#231;&#227;o THEN &#39;resposta&#39; ELSE &#39;outra&#39; END</code>. Um teste com NULL continua desconhecido; use IS NULL para classific&#225;-lo.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>ap&#243;s normalizar, 5 passam no formato (1, 3, 6, 9, 12), 2 est&#227;o ausentes (2, 8) e 5 est&#227;o fora (4, 5, 7, 10, 11). O original do id 1 falha pelos espa&#231;os nas bordas. O id 9 passa mesmo com example..test, mostrando que a regra &#233; incompleta. Os dois testes com NULL retornam NULL; um WHERE com esses testes n&#227;o seleciona essa linha.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-04"><summary>Ver uma solução possível — RX-04</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-04: diagnosticar o formato b&#225;sico dos emails
+SELECT id, email AS email_original,
+       NULLIF(lower(btrim(email)), &#39;&#39;) AS email_normalizado,
+       email ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+           AS original_passa,
+       CASE
+           WHEN NULLIF(btrim(email), &#39;&#39;) IS NULL THEN &#39;ausente&#39;
+           WHEN lower(btrim(email))
+                ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+               THEN &#39;passa no formato&#39;
+           ELSE &#39;fora do formato&#39;
+       END AS diagnostico
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- Normalizados: 5 passam (1,3,6,9,12), 2 ausentes (2,8), 5 fora.
+-- O id 9 passa apesar dos dois pontos seguidos. O regex &#233; simplificado.
+SELECT NULL::text ~ &#39;abc&#39; AS teste_com_null,
+       NULL::text !~ &#39;abc&#39; AS negacao_com_null;
+-- Ambos NULL: nega&#231;&#227;o n&#227;o transforma valor desconhecido em verdadeiro.</code></pre></details>
+<h3 id="RX-05">RX-05 — Conferir uma lista de UFs</h3>
+<p><strong>Situa&#231;&#227;o:</strong> neste cen&#225;rio, a loja atende somente PR, SP, PE, RS, RJ e SC. Duas letras quaisquer n&#227;o bastam para decidir se a UF &#233; atendida.</p>
+<p><strong>Seu objetivo:</strong> reconhecer exatamente uma das seis siglas permitidas, depois de padronizar espa&#231;os e letras.</p>
+<p><strong>Dados de partida:</strong> use <code>upper(btrim(uf))</code>. Uma UF ausente n&#227;o pertence &#224; lista.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Exiba a UF original e a normalizada.</li>
+<li>Monte um grupo com as seis alternativas e ancore o grupo inteiro.</li>
+<li>Registre quais ids est&#227;o fora da regra.</li>
+<li>Em exemplos separados, compare <code>^PR|SC$</code> com <code>^(PR|SC)$</code> nos textos PR, PRX, XSC e SP.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>coloque as alternativas entre par&#234;nteses antes de acrescentar in&#237;cio e fim. Sem o grupo, as &#226;ncoras ficam ligadas a alternativas diferentes. Em uma consulta de neg&#243;cio, IN tamb&#233;m seria uma escolha simples; aqui o objetivo &#233; praticar agrupamento.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>10 UFs passam; os ids 5 e 10 ficam fora. No teste separado, o agrupamento incorreto aceita PRX e XSC; o correto aceita apenas PR entre os quatro exemplos.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-05"><summary>Ver uma solução possível — RX-05</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-05: aceitar somente as UFs atendidas pela loja
+SELECT id, uf AS uf_original, upper(btrim(uf)) AS uf_normalizada,
+       upper(btrim(uf)) ~ &#39;^(PR|SP|PE|RS|RJ|SC)$&#39; AS uf_atendida
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- 10 passam. IDs 5 e 10 n&#227;o passam.
+SELECT texto,
+       texto ~ &#39;^PR|SC$&#39; AS agrupamento_incorreto,
+       texto ~ &#39;^(PR|SC)$&#39; AS agrupamento_correto
+FROM (VALUES (&#39;PR&#39;), (&#39;PRX&#39;), (&#39;XSC&#39;), (&#39;SP&#39;)) AS exemplos(texto)
+ORDER BY texto;
+-- ^PR|SC$ significa &quot;come&#231;a com PR OU termina com SC&quot;.</code></pre></details>
+<h3 id="RX-06">RX-06 — Conferir c&#243;digos com tamanho exato</h3>
+<p><strong>Situa&#231;&#227;o:</strong> o identificador externo deve conter o prefixo CLI, um h&#237;fen e exatamente tr&#234;s d&#237;gitos. A equipe quer aceitar diferen&#231;as de caixa e espa&#231;os nas extremidades, mas rejeitar prefixos ou sufixos extras.</p>
+<p><strong>Seu objetivo:</strong> validar o formato completo do c&#243;digo, sem aceitar somente um peda&#231;o que pare&#231;a correto.</p>
+<p><strong>Dados de partida:</strong> normalize com <code>upper(btrim(codigo))</code>. Neste exerc&#237;cio, os d&#237;gitos esperados s&#227;o os caracteres de 0 a 9; use <code>COLLATE &quot;C&quot;</code> no texto testado para explicitar essa conven&#231;&#227;o.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Exiba o c&#243;digo original e o normalizado.</li>
+<li>Escreva o prefixo literal, a classe de d&#237;gitos e o quantificador de tr&#234;s posi&#231;&#245;es.</li>
+<li>Acrescente as &#226;ncoras e identifique os ids rejeitados.</li>
+<li>Como treino curto de opcionalidade, crie um padr&#227;o para dois d&#237;gitos, um h&#237;fen opcional e quatro d&#237;gitos. Teste 123456, 12-3456 e 12--3456.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>use <code>{3}</code> depois da classe. H&#237;fen fora de colchetes &#233; literal; <code>-?</code> torna esse h&#237;fen opcional. Coloque o texto com COLLATE antes de <code>~</code>, como em <code>codigo COLLATE &quot;C&quot; ~ &#39;padr&#227;o&#39;</code>.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>9 c&#243;digos passam; 5, 7 e 8 s&#227;o os ids rejeitados. CLI-05 tem dois d&#237;gitos, XCLI-007 tem prefixo extra e CLI-008-extra tem sufixo extra. No treino, os dois primeiros textos passam e o texto com dois h&#237;fens falha.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-06"><summary>Ver uma solução possível — RX-06</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-06: conferir prefixo e quantidade exata de d&#237;gitos
+SELECT id, codigo AS codigo_original,
+       upper(btrim(codigo)) AS codigo_normalizado,
+       upper(btrim(codigo)) COLLATE &quot;C&quot;
+           ~ &#39;^CLI-[[:digit:]]{3}$&#39; AS codigo_no_formato
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- 9 passam. IDs 5, 7 e 8 n&#227;o passam.
+-- COLLATE &quot;C&quot; explicita a conven&#231;&#227;o ASCII para os d&#237;gitos deste c&#243;digo.
+SELECT texto,
+       texto ~ &#39;^[[:digit:]]{2}-?[[:digit:]]{4}$&#39; AS separador_opcional
+FROM (VALUES (&#39;123456&#39;), (&#39;12-3456&#39;), (&#39;12--3456&#39;)) AS exemplos(texto)
+ORDER BY texto;</code></pre></details>
+<h3 id="RX-07">RX-07 — Padronizar nomes com regexp_replace</h3>
+<p><strong>Situa&#231;&#227;o:</strong> o cadastro quer exibir nomes leg&#237;veis, com um espa&#231;o entre as palavras, preservando o texto recebido para auditoria.</p>
+<p><strong>Seu objetivo:</strong> apresentar uma coluna com o nome normalizado e demonstrar a diferen&#231;a entre substituir a primeira ocorr&#234;ncia e todas as ocorr&#234;ncias.</p>
+<p><strong>Dados de partida:</strong> use as 12 linhas originais. N&#227;o execute UPDATE.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Use regexp_replace para trocar um grupo de brancos por um espa&#231;o comum, sem flags.</li>
+<li>Repita a express&#227;o com a flag g.</li>
+<li>Aplique btrim ao resultado da segunda express&#227;o.</li>
+<li>Compare original, primeira substitui&#231;&#227;o e nome final, especialmente nos ids 1, 6, 7 e 12.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>a assinatura usada aqui &#233; <code>regexp_replace(texto, padr&#227;o, substitui&#231;&#227;o, &#39;g&#39;)</code>. Procure grupos de brancos, n&#227;o letras. A substitui&#231;&#227;o deve ser um espa&#231;o, e n&#227;o texto vazio, para evitar juntar as palavras.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>os nomes finais desses ids s&#227;o Ana Silva, Carla Souza, Diego Alves e Iara Melo. No id 1, sem g, somente o primeiro grupo de espa&#231;os &#233; substitu&#237;do. Depois das consultas, o original ainda cont&#233;m seus espa&#231;os, tabula&#231;&#227;o ou quebra de linha.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-07"><summary>Ver uma solução possível — RX-07</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-07: apresentar nomes sem brancos extras
+SELECT id, nome AS nome_original,
+       regexp_replace(nome, &#39;[[:space:]]+&#39;, &#39; &#39;) AS primeira_substituicao,
+       btrim(regexp_replace(nome, &#39;[[:space:]]+&#39;, &#39; &#39;, &#39;g&#39;))
+           AS nome_normalizado
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- No id 1, a primeira substitui&#231;&#227;o s&#243; atinge os espa&#231;os iniciais.
+-- g trata todos os grupos; btrim retira os espa&#231;os que sobram nas bordas.
+-- O SELECT mostra uma vers&#227;o tratada; o dado original continua igual.</code></pre></details>
+<h3 id="RX-08">RX-08 — Limpar telefones sem esconder problemas</h3>
+<p><strong>Situa&#231;&#227;o:</strong> a equipe quer comparar telefones sem pontua&#231;&#227;o. Por&#233;m, apagar tudo que n&#227;o &#233; d&#237;gito pode esconder um erro de digita&#231;&#227;o, como a letra A recebida no id 7.</p>
+<p><strong>Seu objetivo:</strong> mostrar os d&#237;gitos extra&#237;dos e classificar cada telefone como ausente, passa na regra local ou revisar, considerando tamb&#233;m o original.</p>
+<p><strong>Dados de partida:</strong> a regra did&#225;tica aceita DDD + n&#250;mero com 10 ou 11 d&#237;gitos, sem c&#243;digo do pa&#237;s. O original pode conter d&#237;gitos, brancos, par&#234;nteses, mais e h&#237;fen, mas n&#227;o letras. NULL e texto s&#243; de brancos contam como ausentes. Isso n&#227;o verifica se o telefone existe.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Gere uma coluna que remova todos os caracteres que n&#227;o sejam d&#237;gitos.</li>
+<li>Fa&#231;a um teste separado para os caracteres permitidos no texto original.</li>
+<li>Confira se o resultado limpo cont&#233;m exatamente 10 ou 11 d&#237;gitos.</li>
+<li>Use CASE para separar aus&#234;ncia, atendimento &#224;s duas condi&#231;&#245;es e revis&#227;o.</li>
+<li>Explique por que os ids 6 e 7 pedem revis&#227;o por motivos diferentes.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>a classe negada <code>[^[:digit:]]</code> localiza o que ser&#225; removido. Use g para remover todas as ocorr&#234;ncias. Uma CTE <code>WITH telefones AS (SELECT ...)</code> pode dar o nome digitos ao resultado para reutiliz&#225;-lo no SELECT seguinte; ela n&#227;o cria uma tabela permanente.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>7 passam (1, 2, 3, 4, 9, 11, 12), 2 est&#227;o ausentes (8, 10) e 3 pedem revis&#227;o (5, 6, 7). O id 7 vira uma sequ&#234;ncia de 10 d&#237;gitos ap&#243;s apagar a letra, mas deve ser rejeitado pelo original. O id 6 tem c&#243;digo do pa&#237;s e est&#225; fora do modelo local; isso n&#227;o prova que seja um telefone inv&#225;lido.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-08"><summary>Ver uma solução possível — RX-08</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-08: limpar telefone sem esconder uma letra indevida
+WITH telefones AS (
+    SELECT id, telefone,
+           regexp_replace(telefone, &#39;[^[:digit:]]&#39;, &#39;&#39;, &#39;g&#39;) AS digitos
+    FROM bdadosql_regex.importacao_contatos
+)
+SELECT id, telefone AS telefone_original, digitos,
+       CASE
+           WHEN telefone IS NULL OR telefone ~ &#39;^[[:space:]]*$&#39;
+               THEN &#39;ausente&#39;
+           WHEN telefone COLLATE &quot;C&quot; ~ &#39;^[[:digit:][:space:]()+-]+$&#39;
+            AND digitos COLLATE &quot;C&quot; ~ &#39;^[[:digit:]]{10,11}$&#39;
+               THEN &#39;passa na regra local&#39;
+           ELSE &#39;revisar&#39;
+       END AS diagnostico
+FROM telefones
+ORDER BY id;
+-- Regra did&#225;tica: DDD + n&#250;mero, com 10 ou 11 d&#237;gitos, sem c&#243;digo do pa&#237;s.
+-- Permitimos espa&#231;os, (), + e - na apresenta&#231;&#227;o; letras s&#227;o rejeitadas.
+-- 7 passam (1,2,3,4,9,11,12), 2 ausentes (8,10), 3 revisar (5,6,7).
+-- No id 7, retirar &quot;A&quot; gera 10 d&#237;gitos, mas o original exige revis&#227;o.
+-- No id 6, +55 est&#225; fora do modelo LOCAL; isso n&#227;o prova telefone inv&#225;lido.</code></pre></details>
+<h3 id="RX-09">RX-09 — Extrair o dom&#237;nio usando um grupo</h3>
+<p><strong>Situa&#231;&#227;o:</strong> a equipe quer saber os dom&#237;nios informados nos emails, sem manter a parte que identifica o usu&#225;rio no resultado dessa coluna.</p>
+<p><strong>Seu objetivo:</strong> extrair o dom&#237;nio dos emails que passam no formato b&#225;sico e manter todas as 12 linhas no relat&#243;rio.</p>
+<p><strong>Dados de partida:</strong> use a normaliza&#231;&#227;o e o padr&#227;o do RX-04. O dom&#237;nio &#233; a parte depois do arroba. A regra continua simplificada.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Coloque um par de par&#234;nteses em volta da parte do padr&#227;o que representa o dom&#237;nio.</li>
+<li>Use esse padr&#227;o em <code>substring(texto FROM padr&#227;o)</code>.</li>
+<li>Exiba id, email original e dom&#237;nio, sem filtrar fora as linhas que n&#227;o correspondem.</li>
+<li>Como compara&#231;&#227;o, teste <code>regexp_match</code> no texto CLI-017 com um grupo para CLI e outro para os tr&#234;s d&#237;gitos.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>nessa forma de substring, o primeiro grupo entre par&#234;nteses determina o trecho devolvido. J&#225; regexp_match pode devolver um array com v&#225;rios grupos. Os par&#234;nteses pertencem ao padr&#227;o; n&#227;o devem aparecer no email.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>os ids 1 e 3 retornam example.test; o 6 retorna example.com.br; o 9 retorna example..test; o 12 retorna example.test. Os outros sete retornam NULL, e o relat&#243;rio continua com 12 linhas. O teste do c&#243;digo retorna os grupos CLI e 017.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-09"><summary>Ver uma solução possível — RX-09</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-09: extrair somente o dom&#237;nio do email
+SELECT id, email,
+       substring(lower(btrim(email))
+                 FROM &#39;^[^[:space:]@]+@([^[:space:]@]+[.][^[:space:]@]+)$&#39;)
+           AS dominio
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- substring devolve o primeiro grupo entre par&#234;nteses.
+-- H&#225; dom&#237;nio nos ids 1,3,6,9,12; os outros retornam NULL.
+-- O id 9 devolve example..test: extrair n&#227;o resolve a limita&#231;&#227;o do filtro.
+SELECT regexp_match(&#39;CLI-017&#39;, &#39;^(CLI)-([[:digit:]]{3})$&#39;) AS grupos;
+-- Um array com dois grupos: {CLI,017}.</code></pre></details>
+<h3 id="RX-10">RX-10 — Reaproveitar grupos na substitui&#231;&#227;o</h3>
+<p><strong>Situa&#231;&#227;o:</strong> cinco telefones j&#225; passaram pela confer&#234;ncia de formato local e t&#234;m 11 d&#237;gitos. O atendimento quer apresent&#225;-los no formato (DD) NNNNN-NNNN.</p>
+<p><strong>Seu objetivo:</strong> capturar as tr&#234;s partes do n&#250;mero e reconstruir a apresenta&#231;&#227;o, sem alterar a carga.</p>
+<p><strong>Dados de partida:</strong> trabalhe somente com os ids 1, 3, 4, 9 e 12, j&#225; conferidos no RX-08. Retire a pontua&#231;&#227;o antes de formatar.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Gere a sequ&#234;ncia de d&#237;gitos dos cinco telefones selecionados.</li>
+<li>Monte um padr&#227;o ancorado com tr&#234;s grupos consecutivos: dois, cinco e quatro d&#237;gitos.</li>
+<li>Use regexp_replace com uma substitui&#231;&#227;o que reaproveite os tr&#234;s grupos, acrescentando par&#234;nteses, espa&#231;o e h&#237;fen.</li>
+<li>Compare telefone original e formatado.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>na substitui&#231;&#227;o, <code>\1</code>, <code>\2</code> e <code>\3</code> referem-se aos grupos. Para representar essas barras de forma expl&#237;cita no SQL, use um literal de escape: <code>E&#39;(\\1) \\2-\\3&#39;</code>. Os par&#234;nteses desse texto de substitui&#231;&#227;o s&#227;o os que aparecer&#227;o na apresenta&#231;&#227;o.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>aparecem 5 linhas. O id 3 fica (21) 98888-0003; o id 4 fica (48) 98888-0004. Os ids 1, 9 e 12 j&#225; tinham essa apresenta&#231;&#227;o. Essa consulta formata os casos selecionados; n&#227;o substitui a classifica&#231;&#227;o de todo o lote.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-10"><summary>Ver uma solução possível — RX-10</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-10: reutilizar grupos para formatar um telefone
+SELECT id, telefone AS telefone_original,
+       regexp_replace(
+           regexp_replace(telefone, &#39;[^[:digit:]]&#39;, &#39;&#39;, &#39;g&#39;),
+           &#39;^([[:digit:]]{2})([[:digit:]]{5})([[:digit:]]{4})$&#39;,
+           E&#39;(\\1) \\2-\\3&#39;
+       ) AS telefone_formatado
+FROM bdadosql_regex.importacao_contatos
+WHERE id IN (1,3,4,9,12)
+ORDER BY id;
+-- Sele&#231;&#227;o restrita a cinco telefones j&#225; conferidos no RX-08.
+-- Grupo 1: DDD; grupo 2: cinco d&#237;gitos; grupo 3: quatro d&#237;gitos.
+-- No literal E&#39;...&#39;, \\ representa uma barra entregue ao regexp_replace.
+-- \1, \2 e \3, na substitui&#231;&#227;o, reaproveitam os grupos capturados.
+-- Exemplo do id 3: (21) 98888-0003.</code></pre></details>
+<h3 id="RX-11">RX-11 — Entender uma ocorr&#234;ncia e v&#225;rias ocorr&#234;ncias</h3>
+<p><strong>Situa&#231;&#227;o:</strong> algumas observa&#231;&#245;es citam pedidos. Uma pessoa pode mencionar mais de um, e outra pode n&#227;o mencionar nenhum. A equipe quer entender por que um relat&#243;rio muda de quantidade ou perde um contato ao extrair essas refer&#234;ncias.</p>
+<p><strong>Seu objetivo:</strong> comparar regexp_match com regexp_matches e explicar o que cada linha do resultado passa a representar.</p>
+<p><strong>Dados de partida:</strong> examine somente as observa&#231;&#245;es dos ids 1, 3 e 8. Procure PED- seguido de tr&#234;s d&#237;gitos e capture esses d&#237;gitos.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Exiba o id e o resultado de regexp_match.</li>
+<li>Fa&#231;a outra consulta com regexp_matches e a flag g.</li>
+<li>Compare os ids presentes e a quantidade de vezes em que cada um aparece.</li>
+<li>Explique por que contar as linhas dos dois resultados n&#227;o mede necessariamente a mesma coisa.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>regexp_match representa a primeira ocorr&#234;ncia como um array, ou NULL. regexp_matches pode produzir v&#225;rias linhas e n&#227;o produz uma linha para o contato sem correspond&#234;ncia quando usada dessa maneira no SELECT. Observe os ids, n&#227;o apenas a contagem total.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>a primeira consulta tem 3 linhas: id 1 com 101, id 3 com 103 e id 8 com NULL. A segunda tamb&#233;m tem 3, mas agora o id 1 aparece com 101 e 102, o id 3 com 103, e o id 8 n&#227;o aparece. A contagem igual esconde popula&#231;&#245;es diferentes; men&#231;&#227;o no texto tamb&#233;m n&#227;o comprova exist&#234;ncia do pedido.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-11"><summary>Ver uma solução possível — RX-11</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-11: encontrar uma ocorr&#234;ncia ou todas as ocorr&#234;ncias
+SELECT id, regexp_match(observacao, &#39;PED-([[:digit:]]{3})&#39;) AS primeiro
+FROM bdadosql_regex.importacao_contatos
+WHERE id IN (1,3,8)
+ORDER BY id;
+-- 3 linhas: 1 -&gt; {101}; 3 -&gt; {103}; 8 -&gt; NULL.
+SELECT id,
+       regexp_matches(observacao, &#39;PED-([[:digit:]]{3})&#39;, &#39;g&#39;) AS ocorrencia
+FROM bdadosql_regex.importacao_contatos
+WHERE id IN (1,3,8)
+ORDER BY id, ocorrencia;
+-- 3 linhas novamente, mas de OUTRA popula&#231;&#227;o:
+-- 1 -&gt; {101}; 1 -&gt; {102}; 3 -&gt; {103}. O id 8 n&#227;o produz linha.
+-- Estes s&#227;o c&#243;digos mencionados no texto, n&#227;o prova de pedidos existentes.</code></pre></details>
+<h3 id="RX-12">RX-12 — Escrever um diagn&#243;stico com evid&#234;ncias</h3>
+<p><strong>Situa&#231;&#227;o:</strong> a equipe precisa de uma conclus&#227;o sobre o lote, n&#227;o apenas de v&#225;rias colunas booleanas. Ela tamb&#233;m quer saber quais limites das regras continuam pendentes.</p>
+<p><strong>Seu objetivo:</strong> entregar um relat&#243;rio por linha e um par&#225;grafo que justifique a decis&#227;o usando contagens e exemplos concretos.</p>
+<p><strong>Dados de partida:</strong> combine as regras de email, UF e c&#243;digo. Para esta decis&#227;o, email ausente &#233; permitido; UF e c&#243;digo precisam passar. Mostre o nome normalizado, mas n&#227;o o use como crit&#233;rio de rejei&#231;&#227;o. O telefone est&#225; fora desta decis&#227;o e foi diagnosticado separadamente no RX-08.</p>
+<details class="passo-a-passo"><summary>Ver passo a passo</summary><ol>
+<li>Monte uma etapa com as colunas originais e suas vers&#245;es normalizadas.</li>
+<li>Acrescente a situa&#231;&#227;o do email e os testes de UF e c&#243;digo.</li>
+<li>Acrescente uma decis&#227;o: passa nas regras ou revisar. Preserve todas as linhas.</li>
+<li>Conte as situa&#231;&#245;es de email, as UFs e os c&#243;digos rejeitados, e quantos contatos passam nas tr&#234;s regras combinadas. As ocorr&#234;ncias de erro podem se sobrepor; n&#227;o some essas contagens como se fossem pessoas diferentes.</li>
+<li>Escreva um par&#225;grafo com os totais e pelo menos duas evid&#234;ncias por id: uma de normaliza&#231;&#227;o e outra de limita&#231;&#227;o da regra.</li>
+</ol></details>
+<details class="dica"><summary>Ver dica para come&#231;ar</summary><p>reutilize as consultas anteriores. Duas CTEs, normalizados e diagnostico, podem organizar as etapas antes do SELECT final. O nome de cada etapa funciona como fonte da seguinte. Para contar, voc&#234; pode agrupar a classifica&#231;&#227;o ou usar COUNT com FILTER.</p></details>
+<details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>s&#227;o 12 contatos; 5 emails passam no formato, 2 est&#227;o ausentes e 5 est&#227;o fora; 2 UFs e 3 c&#243;digos n&#227;o passam. Seis contatos passam nas regras combinadas (1, 2, 3, 6, 9, 12), e seis pedem revis&#227;o. O id 1 demonstra normaliza&#231;&#227;o &#250;til. O id 9 exige registrar a limita&#231;&#227;o, pois example..test passa. N&#227;o conclua que os seis est&#227;o integralmente validados nem importe a carga durante este exerc&#237;cio. A solu&#231;&#227;o poss&#237;vel inclui um exemplo de diagn&#243;stico escrito.</p></details>
+<details class="solucao-exercicio" id="solucao-RX-12"><summary>Ver uma solução possível — RX-12</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Execute no banco em que preparou o schema <code>bdadosql_regex</code>. As consultas são somente leitura e podem ser repetidas. Os resultados esperados pressupõem a carga original de 12 contatos.</p><pre><code>-- RX-12: entregar um diagn&#243;stico com evid&#234;ncias e limites
+WITH normalizados AS (
+    SELECT id, nome, email, uf, codigo,
+           btrim(regexp_replace(nome, &#39;[[:space:]]+&#39;, &#39; &#39;, &#39;g&#39;)) AS nome_limpo,
+           NULLIF(lower(btrim(email)), &#39;&#39;) AS email_limpo,
+           upper(btrim(uf)) AS uf_limpa,
+           upper(btrim(codigo)) AS codigo_limpo
+    FROM bdadosql_regex.importacao_contatos
+), diagnostico AS (
+    SELECT *,
+           CASE
+               WHEN email_limpo IS NULL THEN &#39;ausente&#39;
+               WHEN email_limpo
+                    ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+                   THEN &#39;passa no formato&#39;
+               ELSE &#39;fora do formato&#39;
+           END AS situacao_email,
+           COALESCE(uf_limpa ~ &#39;^(PR|SP|PE|RS|RJ|SC)$&#39;, false) AS uf_ok,
+           COALESCE(codigo_limpo COLLATE &quot;C&quot; ~ &#39;^CLI-[[:digit:]]{3}$&#39;, false)
+               AS codigo_ok
+    FROM normalizados
+)
+SELECT id, nome AS nome_original, nome_limpo,
+       email AS email_original, email_limpo,
+       uf AS uf_original, uf_limpa,
+       codigo AS codigo_original, codigo_limpo,
+       situacao_email, uf_ok, codigo_ok,
+       CASE
+           WHEN situacao_email IN (&#39;ausente&#39;,&#39;passa no formato&#39;)
+                AND uf_ok AND codigo_ok THEN &#39;passa nas regras&#39;
+           ELSE &#39;revisar&#39;
+       END AS decisao_das_regras
+FROM diagnostico
+ORDER BY id;
+-- Escopo desta decis&#227;o: email, UF e c&#243;digo. Email ausente &#233; permitido.
+-- Nome &#233; apresentado normalizado; telefone n&#227;o participa dessa decis&#227;o.
+-- 6 passam nas regras: 1,2,3,6,9,12. 6 ficam para revis&#227;o.
+-- O id 9 continua sendo evid&#234;ncia de uma lacuna da regra de email.
+-- Diagn&#243;stico poss&#237;vel:
+-- &quot;O lote tem 12 contatos. Ap&#243;s normaliza&#231;&#227;o, 5 emails passam no formato,
+-- 2 est&#227;o ausentes e 5 est&#227;o fora. H&#225; 2 UFs e 3 c&#243;digos fora da regra.
+-- Seis contatos passam nas tr&#234;s regras; isso n&#227;o certifica sua qualidade
+-- completa: o id 9 passa mesmo com example..test. N&#227;o importei a carga.
+-- Encaminharia esse caso para definir uma regra adicional com a equipe.&quot;</code></pre></details>
+<h2>Retome o laborat&#243;rio original</h2>
+<p>Volte ao <a href="../01_Laboratorios_Nivel2.md#n2-14--diagnosticar-o-lote-bruto">N2-1.4 no roteiro de n&#237;vel 2</a> ou ao <a href="../Laboratorios_Nivel2.html#N2-1.4">HTML de n&#237;vel 2</a>. Explique o regex de email com suas palavras e compare a qualidade do seu diagn&#243;stico antes e depois deste extra.</p>
+<p>As solu&#231;&#245;es completas est&#227;o em <a href="02_Solucoes_Regex.sql">02_Solucoes_Regex.sql</a>. A <a href="VALIDACAO.md">valida&#231;&#227;o</a> descreve as confer&#234;ncias executadas. As refer&#234;ncias t&#233;cnicas est&#227;o no guia de consulta acima.</p>
+<h2 id="solucoes">Soluções comentadas — consulte após tentar</h2><p>Abra somente a tarefa que está corrigindo. Todos os exemplos usam somente SELECT. Compare com sua tentativa antes de executar.</p>
+<details><summary>Solução RX-01</summary><pre><code>-- RX-01: procurar texto e comparar mai&#250;sculas e min&#250;sculas
+SELECT id, nome,
+       nome ~ &#39;ana&#39; AS encontra_exato,
+       nome ~* &#39;ana&#39; AS encontra_sem_distinguir_caixa,
+       nome !~ &#39;ana&#39; AS nao_encontra_exato,
+       nome !~* &#39;ana&#39; AS nao_encontra_sem_distinguir_caixa
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- ~: id 3. ~*: ids 1, 2, 3, 4. Mariana tamb&#233;m cont&#233;m &quot;ana&quot;.
+-- !~ e !~* negam o teste; n&#227;o alteram o texto.</code></pre></details>
+<details><summary>Solução RX-02</summary><pre><code>-- RX-02: encontrar Ana como primeiro nome, e n&#227;o dentro de outra palavra
+SELECT id, btrim(nome) AS nome,
+       btrim(nome) ~* &#39;ana&#39; AS em_qualquer_posicao,
+       btrim(nome) ~* &#39;^ana&#39; AS no_inicio,
+       btrim(nome) ~* &#39;^ana([[:space:]]|$)&#39; AS primeiro_nome_ana
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- Qualquer posi&#231;&#227;o: 1,2,3,4. In&#237;cio: 1,2,4. Primeiro nome: 1,2.
+-- Depois de &quot;ana&quot;, o grupo exige um branco OU o fim do texto.
+SELECT &#39;Ana&#39; ~* &#39;^ana$&#39; AS nome_inteiro_ana,
+       &#39;Ana Silva&#39; ~* &#39;^ana$&#39; AS nome_composto_nao_e_igual;</code></pre></details>
+<details><summary>Solução RX-03</summary><pre><code>-- RX-03: investigar espa&#231;os em branco e repeti&#231;&#245;es
+SELECT id, nome,
+       nome ~ &#39;[[:space:]]&#39; AS tem_branco,
+       nome ~ &#39;[[:space:]]{2,}&#39; AS tem_brancos_consecutivos
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- Brancos: 1,2,3,4,6,7,12. Dois ou mais consecutivos: 1,7.
+SELECT &#39;&#39; ~ &#39;^[[:space:]]*$&#39; AS asterisco_aceita_vazio,
+       &#39;&#39; ~ &#39;^[[:space:]]+$&#39; AS mais_exige_um,
+       E&#39;\t&#39; ~ &#39;^[[:space:]]+$&#39; AS tabulacao_e_branco,
+       E&#39;\n&#39; ~ &#39;^[[:space:]]+$&#39; AS quebra_e_branco;</code></pre></details>
+<details><summary>Solução RX-04</summary><pre><code>-- RX-04: diagnosticar o formato b&#225;sico dos emails
+SELECT id, email AS email_original,
+       NULLIF(lower(btrim(email)), &#39;&#39;) AS email_normalizado,
+       email ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+           AS original_passa,
+       CASE
+           WHEN NULLIF(btrim(email), &#39;&#39;) IS NULL THEN &#39;ausente&#39;
+           WHEN lower(btrim(email))
+                ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+               THEN &#39;passa no formato&#39;
+           ELSE &#39;fora do formato&#39;
+       END AS diagnostico
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- Normalizados: 5 passam (1,3,6,9,12), 2 ausentes (2,8), 5 fora.
+-- O id 9 passa apesar dos dois pontos seguidos. O regex &#233; simplificado.
+SELECT NULL::text ~ &#39;abc&#39; AS teste_com_null,
+       NULL::text !~ &#39;abc&#39; AS negacao_com_null;
+-- Ambos NULL: nega&#231;&#227;o n&#227;o transforma valor desconhecido em verdadeiro.</code></pre></details>
+<details><summary>Solução RX-05</summary><pre><code>-- RX-05: aceitar somente as UFs atendidas pela loja
+SELECT id, uf AS uf_original, upper(btrim(uf)) AS uf_normalizada,
+       upper(btrim(uf)) ~ &#39;^(PR|SP|PE|RS|RJ|SC)$&#39; AS uf_atendida
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- 10 passam. IDs 5 e 10 n&#227;o passam.
+SELECT texto,
+       texto ~ &#39;^PR|SC$&#39; AS agrupamento_incorreto,
+       texto ~ &#39;^(PR|SC)$&#39; AS agrupamento_correto
+FROM (VALUES (&#39;PR&#39;), (&#39;PRX&#39;), (&#39;XSC&#39;), (&#39;SP&#39;)) AS exemplos(texto)
+ORDER BY texto;
+-- ^PR|SC$ significa &quot;come&#231;a com PR OU termina com SC&quot;.</code></pre></details>
+<details><summary>Solução RX-06</summary><pre><code>-- RX-06: conferir prefixo e quantidade exata de d&#237;gitos
+SELECT id, codigo AS codigo_original,
+       upper(btrim(codigo)) AS codigo_normalizado,
+       upper(btrim(codigo)) COLLATE &quot;C&quot;
+           ~ &#39;^CLI-[[:digit:]]{3}$&#39; AS codigo_no_formato
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- 9 passam. IDs 5, 7 e 8 n&#227;o passam.
+-- COLLATE &quot;C&quot; explicita a conven&#231;&#227;o ASCII para os d&#237;gitos deste c&#243;digo.
+SELECT texto,
+       texto ~ &#39;^[[:digit:]]{2}-?[[:digit:]]{4}$&#39; AS separador_opcional
+FROM (VALUES (&#39;123456&#39;), (&#39;12-3456&#39;), (&#39;12--3456&#39;)) AS exemplos(texto)
+ORDER BY texto;</code></pre></details>
+<details><summary>Solução RX-07</summary><pre><code>-- RX-07: apresentar nomes sem brancos extras
+SELECT id, nome AS nome_original,
+       regexp_replace(nome, &#39;[[:space:]]+&#39;, &#39; &#39;) AS primeira_substituicao,
+       btrim(regexp_replace(nome, &#39;[[:space:]]+&#39;, &#39; &#39;, &#39;g&#39;))
+           AS nome_normalizado
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- No id 1, a primeira substitui&#231;&#227;o s&#243; atinge os espa&#231;os iniciais.
+-- g trata todos os grupos; btrim retira os espa&#231;os que sobram nas bordas.
+-- O SELECT mostra uma vers&#227;o tratada; o dado original continua igual.</code></pre></details>
+<details><summary>Solução RX-08</summary><pre><code>-- RX-08: limpar telefone sem esconder uma letra indevida
+WITH telefones AS (
+    SELECT id, telefone,
+           regexp_replace(telefone, &#39;[^[:digit:]]&#39;, &#39;&#39;, &#39;g&#39;) AS digitos
+    FROM bdadosql_regex.importacao_contatos
+)
+SELECT id, telefone AS telefone_original, digitos,
+       CASE
+           WHEN telefone IS NULL OR telefone ~ &#39;^[[:space:]]*$&#39;
+               THEN &#39;ausente&#39;
+           WHEN telefone COLLATE &quot;C&quot; ~ &#39;^[[:digit:][:space:]()+-]+$&#39;
+            AND digitos COLLATE &quot;C&quot; ~ &#39;^[[:digit:]]{10,11}$&#39;
+               THEN &#39;passa na regra local&#39;
+           ELSE &#39;revisar&#39;
+       END AS diagnostico
+FROM telefones
+ORDER BY id;
+-- Regra did&#225;tica: DDD + n&#250;mero, com 10 ou 11 d&#237;gitos, sem c&#243;digo do pa&#237;s.
+-- Permitimos espa&#231;os, (), + e - na apresenta&#231;&#227;o; letras s&#227;o rejeitadas.
+-- 7 passam (1,2,3,4,9,11,12), 2 ausentes (8,10), 3 revisar (5,6,7).
+-- No id 7, retirar &quot;A&quot; gera 10 d&#237;gitos, mas o original exige revis&#227;o.
+-- No id 6, +55 est&#225; fora do modelo LOCAL; isso n&#227;o prova telefone inv&#225;lido.</code></pre></details>
+<details><summary>Solução RX-09</summary><pre><code>-- RX-09: extrair somente o dom&#237;nio do email
+SELECT id, email,
+       substring(lower(btrim(email))
+                 FROM &#39;^[^[:space:]@]+@([^[:space:]@]+[.][^[:space:]@]+)$&#39;)
+           AS dominio
+FROM bdadosql_regex.importacao_contatos
+ORDER BY id;
+-- substring devolve o primeiro grupo entre par&#234;nteses.
+-- H&#225; dom&#237;nio nos ids 1,3,6,9,12; os outros retornam NULL.
+-- O id 9 devolve example..test: extrair n&#227;o resolve a limita&#231;&#227;o do filtro.
+SELECT regexp_match(&#39;CLI-017&#39;, &#39;^(CLI)-([[:digit:]]{3})$&#39;) AS grupos;
+-- Um array com dois grupos: {CLI,017}.</code></pre></details>
+<details><summary>Solução RX-10</summary><pre><code>-- RX-10: reutilizar grupos para formatar um telefone
+SELECT id, telefone AS telefone_original,
+       regexp_replace(
+           regexp_replace(telefone, &#39;[^[:digit:]]&#39;, &#39;&#39;, &#39;g&#39;),
+           &#39;^([[:digit:]]{2})([[:digit:]]{5})([[:digit:]]{4})$&#39;,
+           E&#39;(\\1) \\2-\\3&#39;
+       ) AS telefone_formatado
+FROM bdadosql_regex.importacao_contatos
+WHERE id IN (1,3,4,9,12)
+ORDER BY id;
+-- Sele&#231;&#227;o restrita a cinco telefones j&#225; conferidos no RX-08.
+-- Grupo 1: DDD; grupo 2: cinco d&#237;gitos; grupo 3: quatro d&#237;gitos.
+-- No literal E&#39;...&#39;, \\ representa uma barra entregue ao regexp_replace.
+-- \1, \2 e \3, na substitui&#231;&#227;o, reaproveitam os grupos capturados.
+-- Exemplo do id 3: (21) 98888-0003.</code></pre></details>
+<details><summary>Solução RX-11</summary><pre><code>-- RX-11: encontrar uma ocorr&#234;ncia ou todas as ocorr&#234;ncias
+SELECT id, regexp_match(observacao, &#39;PED-([[:digit:]]{3})&#39;) AS primeiro
+FROM bdadosql_regex.importacao_contatos
+WHERE id IN (1,3,8)
+ORDER BY id;
+-- 3 linhas: 1 -&gt; {101}; 3 -&gt; {103}; 8 -&gt; NULL.
+SELECT id,
+       regexp_matches(observacao, &#39;PED-([[:digit:]]{3})&#39;, &#39;g&#39;) AS ocorrencia
+FROM bdadosql_regex.importacao_contatos
+WHERE id IN (1,3,8)
+ORDER BY id, ocorrencia;
+-- 3 linhas novamente, mas de OUTRA popula&#231;&#227;o:
+-- 1 -&gt; {101}; 1 -&gt; {102}; 3 -&gt; {103}. O id 8 n&#227;o produz linha.
+-- Estes s&#227;o c&#243;digos mencionados no texto, n&#227;o prova de pedidos existentes.</code></pre></details>
+<details><summary>Solução RX-12</summary><pre><code>-- RX-12: entregar um diagn&#243;stico com evid&#234;ncias e limites
+WITH normalizados AS (
+    SELECT id, nome, email, uf, codigo,
+           btrim(regexp_replace(nome, &#39;[[:space:]]+&#39;, &#39; &#39;, &#39;g&#39;)) AS nome_limpo,
+           NULLIF(lower(btrim(email)), &#39;&#39;) AS email_limpo,
+           upper(btrim(uf)) AS uf_limpa,
+           upper(btrim(codigo)) AS codigo_limpo
+    FROM bdadosql_regex.importacao_contatos
+), diagnostico AS (
+    SELECT *,
+           CASE
+               WHEN email_limpo IS NULL THEN &#39;ausente&#39;
+               WHEN email_limpo
+                    ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+                   THEN &#39;passa no formato&#39;
+               ELSE &#39;fora do formato&#39;
+           END AS situacao_email,
+           COALESCE(uf_limpa ~ &#39;^(PR|SP|PE|RS|RJ|SC)$&#39;, false) AS uf_ok,
+           COALESCE(codigo_limpo COLLATE &quot;C&quot; ~ &#39;^CLI-[[:digit:]]{3}$&#39;, false)
+               AS codigo_ok
+    FROM normalizados
+)
+SELECT id, nome AS nome_original, nome_limpo,
+       email AS email_original, email_limpo,
+       uf AS uf_original, uf_limpa,
+       codigo AS codigo_original, codigo_limpo,
+       situacao_email, uf_ok, codigo_ok,
+       CASE
+           WHEN situacao_email IN (&#39;ausente&#39;,&#39;passa no formato&#39;)
+                AND uf_ok AND codigo_ok THEN &#39;passa nas regras&#39;
+           ELSE &#39;revisar&#39;
+       END AS decisao_das_regras
+FROM diagnostico
+ORDER BY id;
+-- Escopo desta decis&#227;o: email, UF e c&#243;digo. Email ausente &#233; permitido.
+-- Nome &#233; apresentado normalizado; telefone n&#227;o participa dessa decis&#227;o.
+-- 6 passam nas regras: 1,2,3,6,9,12. 6 ficam para revis&#227;o.
+-- O id 9 continua sendo evid&#234;ncia de uma lacuna da regra de email.
+-- Diagn&#243;stico poss&#237;vel:
+-- &quot;O lote tem 12 contatos. Ap&#243;s normaliza&#231;&#227;o, 5 emails passam no formato,
+-- 2 est&#227;o ausentes e 5 est&#227;o fora. H&#225; 2 UFs e 3 c&#243;digos fora da regra.
+-- Seis contatos passam nas tr&#234;s regras; isso n&#227;o certifica sua qualidade
+-- completa: o id 9 passa mesmo com example..test. N&#227;o importei a carga.
+-- Encaminharia esse caso para definir uma regra adicional com a equipe.&quot;</code></pre></details>
+</main><footer>BDLab10 · Extra POSIX · Fonte editável: 01_Laboratorio_Regex.md · Veja VALIDACAO.md para as conferências realizadas.</footer></body></html>

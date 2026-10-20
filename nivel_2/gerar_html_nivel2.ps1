@@ -84,6 +84,27 @@ foreach ($section in @(
         (Inline $section.Summary) + '</summary><p>$1</p></details>'
     $renderedBody = [regex]::Replace($renderedBody, $pattern, $replacement)
 }
+$solutionsById = @{}
+foreach ($block in $blocks) {
+    $solutionsById[$block.Groups[1].Value] = $block.Value.Trim()
+}
+$exercisePattern = '(?ms)(<h3 id="(N2-\d+\.\d+)">.*?)(?=<h[23]\b|</main>)'
+if ([regex]::Matches($renderedBody, $exercisePattern).Count -ne 30) {
+    throw 'Esperados 30 exercícios para incorporar soluções.'
+}
+$renderedBody = [regex]::Replace($renderedBody, $exercisePattern,
+    [Text.RegularExpressions.MatchEvaluator]{ param($match)
+        $id = $match.Groups[2].Value
+        if (-not $solutionsById.ContainsKey($id)) { throw ('Solução ausente: ' + $id) }
+        return $match.Groups[1].Value +
+            '<details class="solucao-exercicio" id="solucao-' + $id + '">' +
+            '<summary>Ver uma solução possível — ' + $id + '</summary>' +
+            '<p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. ' +
+            'Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. ' +
+            'Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. ' +
+            'Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>' +
+            [Net.WebUtility]::HtmlEncode($solutionsById[$id]) + '</code></pre></details>' + "`n"
+    })
 $html = $head + "`n" + $renderedBody + '<footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer></body></html>'
 [IO.File]::WriteAllText((Join-Path $base 'Laboratorios_Nivel2.html'), $html, [Text.UTF8Encoding]::new($false))
 Write-Output 'Gerado: Laboratorios_Nivel2.html (30 desafios e 30 soluções).'

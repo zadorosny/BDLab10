@@ -69,6 +69,8 @@ Nos passos numerados, execute cada etapa antes de seguir para a seguinte. No DBe
 
 Sua entrega pode ser curta: SQL utilizado, resultado ou captura e duas ou três frases explicando o que aconteceu. Em desempenho, acrescente os planos e as medições. As soluções no fim do HTML são para correção; não é necessário lê-las antes de começar.
 
+No HTML, você também pode abrir **Ver uma solução possível** diretamente no exercício. A seção começa recolhida e apresenta o SQL comentado daquela tarefa. Ela exemplifica uma resposta válida; outras soluções são possíveis se respeitarem as regras e produzirem o resultado esperado. O conjunto das soluções permanece disponível no fim da página.
+
 ## Guia rápido das ferramentas novas
 
 | Recurso | Para que serve aqui | Como pensar nele |

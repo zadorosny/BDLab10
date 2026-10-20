@@ -106,6 +106,7 @@ SELECT * FROM importacao_contatos ORDER BY lote_id;
 <p>No HTML, o passo a passo, a dica e a confer&#234;ncia do resultado come&#231;am recolhidos em cada exerc&#237;cio. Clique em <strong>Ver passo a passo</strong>, <strong>Ver dica para come&#231;ar</strong> ou <strong>Ver como conferir seu resultado</strong> para abrir somente a ajuda desejada; clique novamente para recolher. Voc&#234; pode tentar resolver pelo contexto e pelo objetivo antes de consultar essas se&#231;&#245;es.</p>
 <p>Nos passos numerados, execute cada etapa antes de seguir para a seguinte. No DBeaver, selecione somente o comando da etapa atual. Quando houver BEGIN, continue no mesmo editor; quando o enunciado mandar provocar um erro, execute essa instru&#231;&#227;o sozinha e depois a recupera&#231;&#227;o. Assim voc&#234; consegue observar os estados intermedi&#225;rios.</p>
 <p>Sua entrega pode ser curta: SQL utilizado, resultado ou captura e duas ou tr&#234;s frases explicando o que aconteceu. Em desempenho, acrescente os planos e as medi&#231;&#245;es. As solu&#231;&#245;es no fim do HTML s&#227;o para corre&#231;&#227;o; n&#227;o &#233; necess&#225;rio l&#234;-las antes de come&#231;ar.</p>
+<p>No HTML, voc&#234; tamb&#233;m pode abrir <strong>Ver uma solu&#231;&#227;o poss&#237;vel</strong> diretamente no exerc&#237;cio. A se&#231;&#227;o come&#231;a recolhida e apresenta o SQL comentado daquela tarefa. Ela exemplifica uma resposta v&#225;lida; outras solu&#231;&#245;es s&#227;o poss&#237;veis se respeitarem as regras e produzirem o resultado esperado. O conjunto das solu&#231;&#245;es permanece dispon&#237;vel no fim da p&#225;gina.</p>
 <h2>Guia r&#225;pido das ferramentas novas</h2>
 <div class="table-wrap"><table><thead><tr>
 <th scope="col">Recurso</th>
@@ -195,6 +196,20 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>uma chave prim&#225;ria composta protege a combina&#231;&#227;o das colunas. N&#227;o &#233; proibido ter o mesmo produto em dep&#243;sitos diferentes. Depois de um erro, encerre a transa&#231;&#227;o com ROLLBACK antes de testar a pr&#243;xima situa&#231;&#227;o.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>erros esperados 23514 (CHECK), 23505 (unicidade) e 23503 (FK); estoques continuam A=10, B=5 e pagamentos continuam com 12 linhas.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-1.1"><summary>Ver uma solução possível — N2-1.1</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-1.1: inspecione primeiro; cada tentativa deve ser isolada.
+SELECT conrelid::regclass AS tabela, conname, pg_get_constraintdef(oid)
+FROM pg_constraint WHERE connamespace=&#39;bdadosql_n2&#39;::regnamespace
+ORDER BY tabela,conname;
+-- BEGIN;
+-- UPDATE estoques SET saldo=-1 WHERE produto_id=1 AND deposito=&#39;A&#39;; -- 23514
+-- ROLLBACK;
+-- BEGIN;
+-- INSERT INTO estoques VALUES (1,&#39;A&#39;,1); -- 23505
+-- ROLLBACK;
+-- BEGIN;
+-- INSERT INTO pagamentos VALUES (99,999,DATE &#39;2026-01-01&#39;,&#39;recebimento&#39;,1); -- 23503
+-- ROLLBACK;
+SELECT * FROM estoques ORDER BY produto_id,deposito;</code></pre></details>
 <h3 id="N2-1.2">N2-1.2 — Transfer&#234;ncia at&#244;mica de estoque</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a opera&#231;&#227;o precisa levar tr&#234;s unidades do Mouse do dep&#243;sito A para o B. N&#227;o houve compra nem venda: apenas mudan&#231;a de lugar. Se o sistema baixar A e falhar antes de aumentar B, o estoque total ficar&#225; incorreto.</p>
 <p><strong>Seu objetivo:</strong> tratar a transfer&#234;ncia como uma &#250;nica opera&#231;&#227;o e conferir sua consist&#234;ncia antes de confirm&#225;-la.</p>
@@ -208,6 +223,16 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>pense em BEGIN como o in&#237;cio de um conjunto de altera&#231;&#245;es que precisam dar certo juntas. RETURNING mostra o resultado do UPDATE; ele n&#227;o confirma a transa&#231;&#227;o. Uma aplica&#231;&#227;o real deve verificar o sucesso dos dois lados antes do COMMIT.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>dentro da transa&#231;&#227;o, A=7, B=8 e total=15; ap&#243;s ROLLBACK, A=10 e B=5.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-1.2"><summary>Ver uma solução possível — N2-1.2</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-1.2: s&#243; execute o cr&#233;dito ap&#243;s conferir uma linha no RETURNING.
+BEGIN;
+UPDATE estoques SET saldo=saldo-3
+WHERE produto_id=1 AND deposito=&#39;A&#39; AND saldo&gt;=3 RETURNING *;
+-- Conferir a sa&#237;da acima antes de executar o cr&#233;dito na mesma sess&#227;o.
+UPDATE estoques SET saldo=saldo+3
+WHERE produto_id=1 AND deposito=&#39;B&#39; RETURNING *;
+SELECT deposito,saldo,SUM(saldo) OVER () AS total FROM estoques ORDER BY deposito;
+ROLLBACK;
+SELECT * FROM estoques ORDER BY deposito; -- A10 B5</code></pre></details>
 <h3 id="N2-1.3">N2-1.3 — Recuperar uma falha sem perder tudo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a transfer&#234;ncia come&#231;ou corretamente, mas um comando errado tentou deixar o dep&#243;sito B com saldo negativo. A equipe quer recuperar essa etapa sem perder a baixa correta que j&#225; tinha feito em A.</p>
 <p><strong>Seu objetivo:</strong> observar a diferen&#231;a entre desfazer toda a transa&#231;&#227;o e voltar apenas a um ponto intermedi&#225;rio.</p>
@@ -222,6 +247,18 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>SAVEPOINT n&#227;o &#233; um salvamento permanente. O ROLLBACK final ainda desfaz inclusive o que ocorreu antes dele. Ap&#243;s o erro, recupere a transa&#231;&#227;o antes de tentar outras consultas.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>ap&#243;s recuperar a falha, A=8 e B=5; ap&#243;s cr&#233;dito, A=8 e B=7; ao final A=10 e B=5. Explique a diferen&#231;a entre ROLLBACK e ROLLBACK TO.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-1.3"><summary>Ver uma solução possível — N2-1.3</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-1.3: passos manuais; a falha n&#227;o deve interromper um script completo.
+BEGIN;
+UPDATE estoques SET saldo=saldo-2 WHERE produto_id=1 AND deposito=&#39;A&#39;;
+SAVEPOINT antes_da_falha;
+-- Execute a pr&#243;xima linha sem o coment&#225;rio, sozinha: erro 23514 esperado.
+-- UPDATE estoques SET saldo=-1 WHERE produto_id=1 AND deposito=&#39;B&#39;;
+-- Ap&#243;s o erro, execute somente a recupera&#231;&#227;o antes das demais instru&#231;&#245;es:
+ROLLBACK TO SAVEPOINT antes_da_falha;
+SELECT * FROM estoques ORDER BY deposito; -- A8 B5
+UPDATE estoques SET saldo=saldo+2 WHERE produto_id=1 AND deposito=&#39;B&#39;;
+SELECT * FROM estoques ORDER BY deposito; -- A8 B7
+ROLLBACK;</code></pre></details>
 <h3 id="N2-1.4">N2-1.4 — Diagnosticar o lote bruto</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o cadastro recebeu um arquivo de contatos de outra equipe. H&#225; espa&#231;os extras, letras em formatos diferentes, emails inv&#225;lidos e duas vers&#245;es da mesma pessoa. Importar tudo diretamente esconderia problemas de qualidade.</p>
 <p><strong>Seu objetivo:</strong> produzir um diagn&#243;stico do lote antes de decidir o que pode entrar no cadastro definitivo.</p>
@@ -234,6 +271,22 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>monte a consulta em etapas: normaliza&#231;&#227;o, classifica&#231;&#227;o e contagem. btrim remove espa&#231;os das pontas; NULLIF(texto,&#39;&#39;) converte texto vazio em NULL. A regex fornecida &#233; somente um filtro did&#225;tico; n&#227;o valida todas as regras de um endere&#231;o de email.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>sete linhas brutas, cinco v&#225;lidas, duas inv&#225;lidas (lotes 6 e 7); cliente 3 tem dois registros v&#225;lidos. N&#227;o elimine duplicatas antes de contar e explicar a qualidade do lote.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-1.4"><summary>Ver uma solução possível — N2-1.4</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-1.4: diagn&#243;stico de todas as linhas, sem alterar a origem.
+WITH normalizados AS (
+ SELECT lote_id,cliente_id,btrim(nome) AS nome,
+ NULLIF(lower(btrim(email)),&#39;&#39;) AS email,upper(btrim(uf)) AS uf
+ FROM importacao_contatos
+), classificados AS (
+ SELECT *,CASE
+ WHEN nome IS NULL OR nome=&#39;&#39; THEN &#39;nome ausente&#39;
+ WHEN uf IS NULL OR uf NOT IN (&#39;PR&#39;,&#39;SP&#39;,&#39;PE&#39;,&#39;RS&#39;,&#39;RJ&#39;,&#39;SC&#39;) THEN &#39;UF invalida&#39;
+ WHEN email IS NOT NULL AND email !~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;
+ THEN &#39;email invalido&#39; ELSE &#39;valido&#39; END AS motivo
+ FROM normalizados
+)
+SELECT *,COUNT(*) FILTER (WHERE motivo=&#39;valido&#39;) OVER (PARTITION BY cliente_id)
+ AS registros_validos_do_cliente
+FROM classificados ORDER BY lote_id;</code></pre></details>
 <h3 id="N2-1.5">N2-1.5 — Importar com desempate e repeti&#231;&#227;o segura</h3>
 <p><strong>Situa&#231;&#227;o:</strong> depois do diagn&#243;stico, o cadastro autorizou importar apenas as linhas v&#225;lidas. Para quem aparece duas vezes, vale a entrada de maior lote_id, que representa a vers&#227;o mais recente. O arquivo pode ser reenviado amanh&#227; e n&#227;o deve duplicar pessoas.</p>
 <p><strong>Seu objetivo:</strong> carregar contatos_tratados com uma linha por pessoa e obter o mesmo conte&#250;do quando repetir o processamento.</p>
@@ -247,6 +300,27 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>use ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY lote_id DESC) para escolher a vers&#227;o. ON CONFLICT (cliente_id) DO UPDATE resolve a chave j&#225; existente; EXCLUDED representa a linha que voc&#234; tentou inserir. Elimine as duplicatas da entrada antes do UPSERT.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>quatro contatos, ids 1, 2, 3 e 9; cliente 3 se chama Carla Nova; cliente 2 tem email NULL; nomes e emails tratados. A segunda execu&#231;&#227;o mant&#233;m o mesmo conte&#250;do, mesmo que o comando reporte atualiza&#231;&#245;es.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-1.5"><summary>Ver uma solução possível — N2-1.5</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-1.5: execute este comando duas vezes e confira o conte&#250;do.
+WITH normalizados AS (
+ SELECT lote_id,cliente_id,btrim(nome) AS nome,
+ NULLIF(lower(btrim(email)),&#39;&#39;) AS email,upper(btrim(uf)) AS uf
+ FROM importacao_contatos
+), validos AS (
+ SELECT * FROM normalizados
+ WHERE nome IS NOT NULL AND nome&lt;&gt;&#39;&#39;
+ AND uf IN (&#39;PR&#39;,&#39;SP&#39;,&#39;PE&#39;,&#39;RS&#39;,&#39;RJ&#39;,&#39;SC&#39;)
+ AND (email IS NULL OR email ~ &#39;^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$&#39;)
+), ordenados AS (
+ SELECT *,ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY lote_id DESC) AS rn
+ FROM validos
+)
+INSERT INTO contatos_tratados (cliente_id,nome,email,uf)
+SELECT cliente_id,nome,email,uf FROM ordenados WHERE rn=1
+ON CONFLICT (cliente_id) DO UPDATE
+SET nome=EXCLUDED.nome,email=EXCLUDED.email,uf=EXCLUDED.uf;
+SELECT * FROM contatos_tratados ORDER BY cliente_id;
+-- 1 Ana Silva ana@example.test PR; 2 Bruno Costa NULL PR;
+-- 3 Carla Nova carla@example.test SP; 9 Ivan ivan@example.test RJ.</code></pre></details>
 <h3 id="N2-1.6">N2-1.6 — Reserva condicional sem saldo negativo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> chegaram duas solicita&#231;&#245;es de oito unidades para um dep&#243;sito que tem apenas dez. A segunda solicita&#231;&#227;o n&#227;o pode ser aceita depois que a primeira consumir o estoque dispon&#237;vel.</p>
 <p><strong>Seu objetivo:</strong> colocar a condi&#231;&#227;o de disponibilidade dentro da pr&#243;pria altera&#231;&#227;o e interpretar uma tentativa que afeta zero linhas.</p>
@@ -260,6 +334,13 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>a condi&#231;&#227;o deve estar no WHERE do UPDATE. Este teste ensina a regra de altera&#231;&#227;o condicional; como h&#225; somente uma sess&#227;o, ele n&#227;o demonstra todos os efeitos de concorr&#234;ncia de uma aplica&#231;&#227;o real.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>primeira tentativa retorna saldo 2; a segunda afeta zero linhas; depois do ROLLBACK, saldo 10.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-1.6"><summary>Ver uma solução possível — N2-1.6</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-1.6: primeira retirada 1 linha, segunda 0; nada persiste.
+BEGIN;
+UPDATE estoques SET saldo=saldo-8
+WHERE produto_id=1 AND deposito=&#39;A&#39; AND saldo&gt;=8 RETURNING *;
+UPDATE estoques SET saldo=saldo-8
+WHERE produto_id=1 AND deposito=&#39;A&#39; AND saldo&gt;=8 RETURNING *;
+ROLLBACK;</code></pre></details>
 <h2 id="N2-2">N2-2 — Filtros, NULL, texto e limites de datas</h2>
 <p><strong>Seu papel neste laborat&#243;rio:</strong> traduzir solicita&#231;&#245;es de neg&#243;cio para filtros exatos. Uma regra mal interpretada pode selecionar a pessoa errada, misturar informa&#231;&#227;o ausente com zero ou colocar um acesso no m&#234;s errado. Voc&#234; vai trabalhar somente com consultas e justificar os casos de borda, al&#233;m do resultado principal.</p>
 <p>Pr&#233;-requisitos novos: NULLIF, btrim, IS DISTINCT FROM, timestamptz, AT TIME ZONE e intervalos com limite superior exclusivo. Todas as tarefas s&#227;o de leitura. N&#227;o transforme valores ausentes no cadastro para facilitar a consulta.</p>
@@ -276,6 +357,10 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>NULLIF(btrim(email),&#39;&#39;) permite reconhecer tanto aus&#234;ncia quanto texto preenchido s&#243; com espa&#231;os. Um email com espa&#231;os nas pontas e conte&#250;do no meio n&#227;o est&#225; ausente.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>apenas Diego, id 4. Ana n&#227;o entra: seu email tem espa&#231;os, mas n&#227;o &#233; vazio.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-2.1"><summary>Ver uma solução possível — N2-2.1</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-2.1: NULLIF tamb&#233;m reconhece o email composto s&#243; por espa&#231;os.
+SELECT id,nome,uf,email FROM clientes
+WHERE ativo AND (uf=&#39;PR&#39; OR uf=&#39;SP&#39;)
+AND NULLIF(btrim(email),&#39;&#39;) IS NULL ORDER BY id; -- 4</code></pre></details>
 <h3 id="N2-2.2">N2-2.2 — Desconhecido, zero e positivo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o financeiro recebeu a pergunta: quantos pedidos tiveram desconto? O cadastro, por&#233;m, distingue desconto confirmado como zero, desconto positivo e desconto ainda desconhecido. Misturar desconhecido com zero esconderia pend&#234;ncias de preenchimento.</p>
 <p><strong>Seu objetivo:</strong> construir um resumo de qualidade do cadastro de descontos sem perder essa distin&#231;&#227;o.</p>
@@ -288,6 +373,12 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>COUNT(*) FILTER (WHERE condi&#231;&#227;o) conta somente as linhas daquela condi&#231;&#227;o sem exigir tr&#234;s consultas. SUM ignora NULL; COALESCE fornece um valor substituto para a express&#227;o, sem alterar o cadastro.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>desconhecidos=3, zero=6, positivos=3; soma de descontos=40. Os tr&#234;s grupos cobrem os 12 pedidos.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-2.2"><summary>Ver uma solução possível — N2-2.2</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-2.2: somas iguais n&#227;o tornam NULL semanticamente igual a zero.
+SELECT COUNT(*) FILTER (WHERE desconto IS NULL) AS desconhecidos,
+ COUNT(*) FILTER (WHERE desconto=0) AS zeros,
+ COUNT(*) FILTER (WHERE desconto&gt;0) AS positivos,
+ SUM(desconto) AS soma_original,SUM(COALESCE(desconto,0)) AS soma_com_zero
+FROM pedidos; -- 3,6,3,40,40</code></pre></details>
 <h3 id="N2-2.3">N2-2.3 — Mar&#231;o no hor&#225;rio de S&#227;o Paulo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o sistema grava instantes de acesso, mas o relat&#243;rio mensal da loja segue o hor&#225;rio de S&#227;o Paulo. Um acesso registrado &#224;s 02:59:59 UTC de 1&#186; de mar&#231;o ainda pertence a fevereiro em S&#227;o Paulo. Cortar o m&#234;s pelo calend&#225;rio UTC gera um relat&#243;rio errado.</p>
 <p><strong>Seu objetivo:</strong> encontrar os acessos de mar&#231;o segundo o fuso do neg&#243;cio e manter a resposta ao mudar o fuso de apresenta&#231;&#227;o da sess&#227;o.</p>
@@ -301,6 +392,21 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>TIMESTAMP &#39;2026-03-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39; interpreta aquele hor&#225;rio de parede no fuso indicado. J&#225; aplicar AT TIME ZONE a ocorrido_em serve para apresent&#225;-lo como hor&#225;rio local. BETWEEN inclui os dois extremos; aqui o extremo final deve ficar de fora.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>ids 2 e 3 nas duas execu&#231;&#245;es. O id 1 ainda &#233; fevereiro local; o 4 j&#225; &#233; abril local. Explique o risco de usar BETWEEN com o primeiro instante do m&#234;s seguinte e de converter a coluna para date para filtrar sem considerar o fuso.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-2.3"><summary>Ver uma solução possível — N2-2.3</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-2.3: SET LOCAL restaura automaticamente a configura&#231;&#227;o no ROLLBACK.
+BEGIN;
+SET LOCAL TIME ZONE &#39;UTC&#39;;
+SELECT id,ocorrido_em,ocorrido_em AT TIME ZONE &#39;America/Sao_Paulo&#39; AS horario_local
+FROM acessos
+WHERE ocorrido_em &gt;= (TIMESTAMP &#39;2026-03-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+AND ocorrido_em &lt; (TIMESTAMP &#39;2026-04-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+ORDER BY id;
+SET LOCAL TIME ZONE &#39;America/Sao_Paulo&#39;;
+SELECT id,ocorrido_em,ocorrido_em AT TIME ZONE &#39;America/Sao_Paulo&#39; AS horario_local
+FROM acessos
+WHERE ocorrido_em &gt;= (TIMESTAMP &#39;2026-03-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+AND ocorrido_em &lt; (TIMESTAMP &#39;2026-04-01 00:00:00&#39; AT TIME ZONE &#39;America/Sao_Paulo&#39;)
+ORDER BY id;
+ROLLBACK; -- ids 2,3 em ambas; apresenta&#231;&#227;o muda, instantes n&#227;o.</code></pre></details>
 <h3 id="N2-2.4">N2-2.4 — Faixas de pre&#231;o sem buracos</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o cat&#225;logo precisa exibir uma faixa de pre&#231;o ao lado de cada produto. O comercial definiu baixo abaixo de 100, medio de 100 a 500 inclusive e alto acima de 500. Se os limites forem escritos de maneira inconsistente, um produto pode ficar sem faixa ou ser classificado na faixa errada.</p>
 <p><strong>Seu objetivo:</strong> escrever uma classifica&#231;&#227;o &#250;nica e provar seu comportamento nas fronteiras.</p>
@@ -313,6 +419,17 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>CASE avalia os WHEN na ordem e para no primeiro verdadeiro. Depois de separar preco &lt; 100, um segundo teste preco &lt;= 500 j&#225; cobre a faixa intermedi&#225;ria. VALUES cria linhas na consulta; n&#227;o insere produtos na tabela.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>baixo=2, medio=3, alto=1; 100 e 500 s&#227;o medio.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-2.4"><summary>Ver uma solução possível — N2-2.4</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-2.4: a ordem dos WHEN resolve os limites sem sobreposi&#231;&#227;o.
+SELECT id,nome,preco,CASE WHEN preco&lt;100 THEN &#39;baixo&#39;
+ WHEN preco&lt;=500 THEN &#39;medio&#39; ELSE &#39;alto&#39; END AS faixa
+FROM produtos ORDER BY id;
+WITH faixas AS (
+ SELECT CASE WHEN preco&lt;100 THEN &#39;baixo&#39; WHEN preco&lt;=500 THEN &#39;medio&#39;
+ ELSE &#39;alto&#39; END AS faixa FROM produtos
+)
+SELECT faixa,COUNT(*) FROM faixas GROUP BY faixa ORDER BY faixa;
+SELECT preco,CASE WHEN preco&lt;100 THEN &#39;baixo&#39; WHEN preco&lt;=500 THEN &#39;medio&#39;
+ ELSE &#39;alto&#39; END AS faixa FROM (VALUES (100),(500)) AS limites(preco);</code></pre></details>
 <h3 id="N2-2.5">N2-2.5 — NULL na compara&#231;&#227;o</h3>
 <p><strong>Situa&#231;&#227;o:</strong> duas pessoas entregaram listas diferentes de pedidos com desconto diferente de zero. Uma usou &lt;&gt; 0; outra, IS DISTINCT FROM 0. O gestor quer entender se algu&#233;m errou ou se os filtros respondem perguntas diferentes.</p>
 <p><strong>Seu objetivo:</strong> mostrar a diferen&#231;a com os ids dos pedidos e explicar o tratamento da aus&#234;ncia de informa&#231;&#227;o.</p>
@@ -325,6 +442,11 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>uma compara&#231;&#227;o comum com NULL produz resultado desconhecido e n&#227;o passa no WHERE. IS DISTINCT FROM permite comparar aus&#234;ncia como um caso distinto. EXCEPT devolve o que est&#225; no primeiro resultado e n&#227;o no segundo.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>&lt;&gt; retorna 101,104,107; IS DISTINCT FROM acrescenta 102,105,108. N&#227;o trate a segunda lista como prova de que o desconto &#233; positivo.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-2.5"><summary>Ver uma solução possível — N2-2.5</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-2.5: as tr&#234;s consultas respondem perguntas diferentes.
+SELECT id FROM pedidos WHERE desconto&lt;&gt;0 ORDER BY id;
+SELECT id FROM pedidos WHERE desconto IS DISTINCT FROM 0 ORDER BY id;
+SELECT id FROM pedidos WHERE desconto IS DISTINCT FROM 0
+EXCEPT SELECT id FROM pedidos WHERE desconto&lt;&gt;0 ORDER BY id; -- 102,105,108</code></pre></details>
 <h3 id="N2-2.6">N2-2.6 — Caracteres literais em padr&#245;es</h3>
 <p><strong>Situa&#231;&#227;o:</strong> um atendente procura um cabo cujo nome cont&#233;m os s&#237;mbolos _ e %. Ele digitou um padr&#227;o LIKE e recebeu todos os produtos, porque esses caracteres tamb&#233;m t&#234;m significado especial na busca.</p>
 <p><strong>Seu objetivo:</strong> distinguir procurar um s&#237;mbolo literal de usar um s&#237;mbolo como regra de correspond&#234;ncia.</p>
@@ -337,6 +459,10 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>no LIKE, % significa qualquer sequ&#234;ncia de caracteres e _ significa um caractere. Com ESCAPE &#39;!&#39;, um ! antes desses s&#237;mbolos manda trat&#225;-los literalmente. Voc&#234; ainda pode usar os outros % do padr&#227;o como curingas nas pontas.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>as buscas literais retornam somente Cabo_100%, id 6; o padr&#227;o sem escape retorna os seis produtos.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-2.6"><summary>Ver uma solução possível — N2-2.6</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-2.6: ! escapa o pr&#243;ximo caractere do padr&#227;o.
+SELECT id,nome FROM produtos WHERE nome LIKE &#39;%!%%&#39; ESCAPE &#39;!&#39; ORDER BY id;
+SELECT id,nome FROM produtos WHERE nome LIKE &#39;%!_%&#39; ESCAPE &#39;!&#39; ORDER BY id;
+SELECT id,nome FROM produtos WHERE nome LIKE &#39;%_%&#39; ORDER BY id;</code></pre></details>
 <h2 id="N2-3">N2-3 — Relat&#243;rios financeiros e fun&#231;&#245;es de janela</h2>
 <p><strong>Seu papel neste laborat&#243;rio:</strong> montar relat&#243;rios que o financeiro consiga explicar. Voc&#234; come&#231;a pelo valor das vendas, compara com o dinheiro recebido e termina com a lista de cobran&#231;a. Cada exerc&#237;cio reaproveita uma ideia do anterior. Guarde a consulta mensal de N2-3.1 e a posi&#231;&#227;o por pedido de N2-3.2: ser&#227;o pontos de partida para as pr&#243;ximas tarefas.</p>
 <p>Pr&#233;-requisitos novos: FILTER, CTE, generate_series, date_trunc, ROW_NUMBER, LAG e SUM OVER. Uma janela mant&#233;m as linhas do resultado e calcula sobre seu grupo; GROUP BY resume linhas. Use ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW para explicitar o acumulado. Todas as tarefas usam a carga original, sem escrita.</p>
@@ -353,6 +479,16 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>date_trunc(&#39;month&#39;, data_pedido) re&#250;ne datas do mesmo m&#234;s. generate_series com intervalo de um m&#234;s fornece o calend&#225;rio. Chama-se compet&#234;ncia, neste exerc&#237;cio, atribuir a venda ao m&#234;s do pedido, independentemente do recebimento.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>janeiro=1290; fevereiro=980; mar&#231;o=540; abril=250; maio=0; junho=0. Total=3060.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-3.1"><summary>Ver uma solução possível — N2-3.1</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-3.1: filtro na CTE preserva os meses vazios do calend&#225;rio.
+WITH meses AS (
+ SELECT generate_series(DATE &#39;2026-01-01&#39;,DATE &#39;2026-06-01&#39;,INTERVAL &#39;1 month&#39;)::date AS mes
+), receita AS (
+ SELECT date_trunc(&#39;month&#39;,data_pedido)::date AS mes,
+ SUM(valor_total-COALESCE(desconto,0)) AS liquido
+ FROM pedidos WHERE status&lt;&gt;&#39;cancelado&#39; GROUP BY 1
+)
+SELECT m.mes,COALESCE(r.liquido,0) AS liquido FROM meses m
+LEFT JOIN receita r USING (mes) ORDER BY m.mes;</code></pre></details>
 <h3 id="N2-3.2">N2-3.2 — Posi&#231;&#227;o financeira por pedido</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o financeiro precisa saber quais pedidos est&#227;o quitados e quais ainda t&#234;m saldo. O status cadastrado n&#227;o basta: h&#225; recebimentos parciais, estorno e at&#233; cliente que pagou a mais.</p>
 <p><strong>Seu objetivo:</strong> calcular a posi&#231;&#227;o financeira de cada venda sem contar um pedido v&#225;rias vezes por ele ter v&#225;rios pagamentos.</p>
@@ -366,6 +502,22 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>imagine a tabela intermedi&#225;ria com apenas pedido_id e recebido. Essa etapa evita que os v&#225;rios pagamentos multipliquem o valor do cabe&#231;alho. Um saldo de -20 representa cr&#233;dito de 20, n&#227;o uma d&#237;vida negativa a esconder.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>dez pedidos; contratado=3060, recebido=2730, saldo assinado=330. A receber positivo=350 e cr&#233;dito=20. Pedido 112 tem saldo -20; 104 tem recebido 480 e saldo zero.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-3.2"><summary>Ver uma solução possível — N2-3.2</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-3.2: uma linha por pedido antes de somar os totais.
+WITH recebidos AS (
+ SELECT pedido_id,SUM(CASE WHEN tipo=&#39;recebimento&#39; THEN valor ELSE -valor END) AS recebido
+ FROM pagamentos GROUP BY pedido_id
+), posicao AS (
+ SELECT p.id,p.valor_total-COALESCE(p.desconto,0) AS contratado,
+ COALESCE(r.recebido,0) AS recebido,
+ p.valor_total-COALESCE(p.desconto,0)-COALESCE(r.recebido,0) AS saldo
+ FROM pedidos p LEFT JOIN recebidos r ON r.pedido_id=p.id WHERE p.status&lt;&gt;&#39;cancelado&#39;
+)
+SELECT *,CASE WHEN saldo&gt;0 THEN &#39;a_receber&#39; WHEN saldo&lt;0 THEN &#39;credito&#39; ELSE &#39;quitado&#39; END AS situacao,
+ SUM(contratado) OVER () AS total_contratado,SUM(recebido) OVER () AS total_recebido,
+ SUM(saldo) OVER () AS saldo_global,
+ SUM(GREATEST(saldo,0)) OVER () AS total_a_receber,
+ SUM(GREATEST(-saldo,0)) OVER () AS total_credito
+FROM posicao ORDER BY id; -- 3060,2730,330,350,20</code></pre></details>
 <h3 id="N2-3.3">N2-3.3 — Dois maiores clientes de cada m&#234;s</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a &#225;rea comercial quer destacar os dois clientes que mais contrataram em cada m&#234;s. Ordenar todas as vendas do semestre e aplicar LIMIT 2 escolheria somente dois clientes do per&#237;odo inteiro.</p>
 <p><strong>Seu objetivo:</strong> construir um ranking independente dentro de cada m&#234;s e aplicar um desempate reproduz&#237;vel.</p>
@@ -379,6 +531,16 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>PARTITION BY mes reinicia a numera&#231;&#227;o a cada m&#234;s. Fa&#231;a a soma antes da janela: primeiro voc&#234; constr&#243;i a pontua&#231;&#227;o de cada cliente, depois atribui sua posi&#231;&#227;o.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>janeiro: (1,1140),(2,150); fevereiro: (4,500),(3,480); mar&#231;o: (6,300),(5,190); abril: (5,150),(3,100). O cliente 1 fica fora do top 2 de mar&#231;o.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-3.3"><summary>Ver uma solução possível — N2-3.3</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-3.3: n&#227;o acrescente cliente_id ao DENSE_RANK se a regra incluir empates de valor.
+WITH totais AS (
+ SELECT date_trunc(&#39;month&#39;,data_pedido)::date AS mes,cliente_id,
+ SUM(valor_total-COALESCE(desconto,0)) AS liquido
+ FROM pedidos WHERE status&lt;&gt;&#39;cancelado&#39; GROUP BY 1,2
+), ranking AS (
+ SELECT *,ROW_NUMBER() OVER (PARTITION BY mes ORDER BY liquido DESC,cliente_id) AS posicao
+ FROM totais
+)
+SELECT * FROM ranking WHERE posicao&lt;=2 ORDER BY mes,posicao;</code></pre></details>
 <h3 id="N2-3.4">N2-3.4 — Acumulado e varia&#231;&#227;o mensal</h3>
 <p><strong>Situa&#231;&#227;o:</strong> depois de receber os totais mensais, a dire&#231;&#227;o perguntou quanto a loja acumulou at&#233; cada m&#234;s e quanto cresceu em rela&#231;&#227;o ao m&#234;s anterior. Maio e junho sem vendas tamb&#233;m precisam aparecer, pois fazem parte da an&#225;lise.</p>
 <p><strong>Seu objetivo:</strong> acrescentar medidas de evolu&#231;&#227;o ao relat&#243;rio de N2-3.1 sem perder suas seis linhas.</p>
@@ -392,6 +554,21 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>SUM OVER calcula sem agrupar novamente as linhas. LAG consulta a linha anterior na ordem definida. NULLIF(anterior,0) &#233; uma forma de evitar divis&#227;o por zero; n&#227;o invente uma taxa de crescimento para esse caso.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>acumulados=1290,2270,2810,3060,3060,3060; maio varia -100%; junho tem varia&#231;&#227;o NULL. Use round(...,2) apenas na apresenta&#231;&#227;o.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-3.4"><summary>Ver uma solução possível — N2-3.4</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-3.4: janela sobre o resultado mensal, incluindo zeros.
+WITH meses AS (
+ SELECT generate_series(DATE &#39;2026-01-01&#39;,DATE &#39;2026-06-01&#39;,INTERVAL &#39;1 month&#39;)::date AS mes
+), receita AS (
+ SELECT date_trunc(&#39;month&#39;,data_pedido)::date AS mes,
+ SUM(valor_total-COALESCE(desconto,0)) AS liquido
+ FROM pedidos WHERE status&lt;&gt;&#39;cancelado&#39; GROUP BY 1
+), calendario AS (
+ SELECT m.mes,COALESCE(r.liquido,0) AS liquido FROM meses m LEFT JOIN receita r USING (mes)
+), janelas AS (
+ SELECT *,SUM(liquido) OVER (ORDER BY mes ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS acumulado,
+ LAG(liquido) OVER (ORDER BY mes) AS anterior FROM calendario
+)
+SELECT *,round(100.0*(liquido-anterior)/NULLIF(anterior,0),2) AS variacao_pct
+FROM janelas ORDER BY mes;</code></pre></details>
 <h3 id="N2-3.5">N2-3.5 — Recebimentos e estornos separados</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a dire&#231;&#227;o comparou receita contratada com o extrato de recebimentos e encontrou n&#250;meros diferentes. O caixa registra quando o pagamento aconteceu e precisa separar dinheiro que entrou de valores devolvidos.</p>
 <p><strong>Seu objetivo:</strong> produzir uma vis&#227;o mensal de caixa e explicar sua diferen&#231;a para o relat&#243;rio de vendas.</p>
@@ -405,6 +582,20 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>o pagamento de 500 e o estorno de 20 do pedido 104 n&#227;o s&#227;o duas entradas de caixa. Um &#233; entrada e o outro &#233; devolu&#231;&#227;o. Em meses sem recebimento, mostre l&#237;quido zero e percentual NULL.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>l&#237;quidos por m&#234;s=1190,780,490,270,0,0; fevereiro tem bruto 800, estorno 20 e percentual 2,50%; total l&#237;quido=2730. Nesta carga, datas de recebimento permanecem no m&#234;s do pedido, mas h&#225; pagamentos parciais e cr&#233;ditos.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-3.5"><summary>Ver uma solução possível — N2-3.5</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-3.5: calend&#225;rio de caixa, n&#227;o de compet&#234;ncia.
+WITH meses AS (
+ SELECT generate_series(DATE &#39;2026-01-01&#39;,DATE &#39;2026-06-01&#39;,INTERVAL &#39;1 month&#39;)::date AS mes
+), caixa AS (
+ SELECT date_trunc(&#39;month&#39;,pg.data_pagamento)::date AS mes,
+ COALESCE(SUM(pg.valor) FILTER (WHERE pg.tipo=&#39;recebimento&#39;),0) AS bruto,
+ COALESCE(SUM(pg.valor) FILTER (WHERE pg.tipo=&#39;estorno&#39;),0) AS estorno
+ FROM pagamentos pg JOIN pedidos p ON p.id=pg.pedido_id
+ WHERE p.status&lt;&gt;&#39;cancelado&#39; GROUP BY 1
+)
+SELECT m.mes,COALESCE(c.bruto,0) AS bruto,COALESCE(c.estorno,0) AS estorno,
+ COALESCE(c.bruto-c.estorno,0) AS recebido_liquido,
+ round(100.0*c.estorno/NULLIF(c.bruto,0),2) AS pct_estornado
+FROM meses m LEFT JOIN caixa c USING (mes) ORDER BY m.mes;</code></pre></details>
 <h3 id="N2-3.6">N2-3.6 — Cobran&#231;a sem compensa&#231;&#227;o indevida</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a equipe de cobran&#231;a quer saber quem precisa ser contatado. O cr&#233;dito de uma venda n&#227;o deve apagar automaticamente a d&#237;vida de outra no relat&#243;rio operacional; uma compensa&#231;&#227;o dependeria de uma regra espec&#237;fica da empresa.</p>
 <p><strong>Seu objetivo:</strong> separar o que cada cliente deve do que tem de cr&#233;dito, classificando primeiro os saldos de cada pedido.</p>
@@ -418,6 +609,17 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>GREATEST(saldo,0) mant&#233;m a d&#237;vida positiva; GREATEST(-saldo,0) transforma somente cr&#233;dito em valor positivo. HAVING filtra o total do cliente depois do agrupamento.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>clientes 1=50, 2=100 e 4=200 a receber. Em uma consulta complementar sem HAVING, cliente 3 tem cr&#233;dito=20. Explique por que SUM(saldo) e SUM(GREATEST(saldo,0)) respondem perguntas diferentes.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-3.6"><summary>Ver uma solução possível — N2-3.6</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-3.6: separe d&#237;vidas e cr&#233;ditos antes de agregar por cliente.
+WITH recebidos AS (
+ SELECT pedido_id,SUM(CASE WHEN tipo=&#39;recebimento&#39; THEN valor ELSE -valor END) AS recebido
+ FROM pagamentos GROUP BY pedido_id
+), saldos AS (
+ SELECT p.cliente_id,p.valor_total-COALESCE(p.desconto,0)-COALESCE(r.recebido,0) AS saldo
+ FROM pedidos p LEFT JOIN recebidos r ON r.pedido_id=p.id WHERE p.status&lt;&gt;&#39;cancelado&#39;
+)
+SELECT cliente_id,SUM(GREATEST(saldo,0)) AS a_receber,SUM(GREATEST(-saldo,0)) AS credito
+FROM saldos GROUP BY cliente_id HAVING SUM(GREATEST(saldo,0))&gt;0 ORDER BY cliente_id;
+-- Remova somente HAVING para conferir o cr&#233;dito do cliente 3.</code></pre></details>
 <h2 id="N2-4">N2-4 — Cardinalidade, aus&#234;ncia e reconcilia&#231;&#227;o</h2>
 <p><strong>Seu papel neste laborat&#243;rio:</strong> investigar relat&#243;rios que parecem plaus&#237;veis, mas omitem pessoas ou multiplicam valores. Antes de corrigir o SQL, observe quantas linhas cada liga&#231;&#227;o produz. Aqui, cardinalidade significa a quantidade de correspond&#234;ncias: um cliente tem v&#225;rios pedidos e um pedido tem v&#225;rios itens e pagamentos.</p>
 <p>Pr&#233;-requisitos novos: LEFT JOIN, FULL JOIN, NOT EXISTS e LEFT JOIN LATERAL. Uma jun&#231;&#227;o lateral pode consultar dados da linha &#224; esquerda; LIMIT 1 exige ORDER BY determin&#237;stico. Todas as tarefas de escrita terminam com ROLLBACK.</p>
@@ -434,6 +636,11 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>quando n&#227;o h&#225; pedido, LEFT JOIN preserva o cliente com colunas do pedido NULL. COUNT(*) contaria essa linha preservada; COUNT(p.id) conta somente pedidos encontrados.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>Gabriela e Hugo aparecem com zero; total global contratado=3060 e quantidade=10.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-4.1"><summary>Ver uma solução possível — N2-4.1</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-4.1: COUNT(p.id), n&#227;o COUNT(*), para contar pedidos.
+SELECT c.id,c.nome,COUNT(p.id) AS pedidos,
+ COALESCE(SUM(p.valor_total-COALESCE(p.desconto,0)),0) AS contratado
+FROM clientes c LEFT JOIN pedidos p ON p.cliente_id=c.id AND p.status&lt;&gt;&#39;cancelado&#39;
+GROUP BY c.id,c.nome ORDER BY c.id;</code></pre></details>
 <h3 id="N2-4.2">N2-4.2 — Anti-join resistente a NULL</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o marketing precisa localizar pessoas que nunca tiveram uma compra n&#227;o cancelada. Uma lista de exclus&#227;o recebida de outra equipe tamb&#233;m pode conter um campo vazio. Voc&#234; precisa garantir que esse NULL n&#227;o fa&#231;a todos os clientes sumirem da consulta.</p>
 <p><strong>Seu objetivo:</strong> aprender a perguntar se uma correspond&#234;ncia existe e comparar isso com uma lista que cont&#233;m NULL.</p>
@@ -447,6 +654,14 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>a subconsulta de NOT EXISTS pode come&#231;ar com SELECT 1; o interesse &#233; haver uma linha correspondente, n&#227;o seu conte&#250;do. O teste com lista &#233; uma simula&#231;&#227;o de consulta e n&#227;o altera nenhum cadastro.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>sem pedidos eleg&#237;veis: 7 e 8; exclus&#227;o da lista com NOT IN retorna zero clientes; com NOT EXISTS retorna sete, todos exceto 2.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-4.2"><summary>Ver uma solução possível — N2-4.2</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-4.2: comparar igualdade com NULL n&#227;o produz verdadeiro.
+SELECT c.id,c.nome FROM clientes c WHERE NOT EXISTS (
+ SELECT 1 FROM pedidos p WHERE p.cliente_id=c.id AND p.status&lt;&gt;&#39;cancelado&#39;
+) ORDER BY c.id;
+SELECT id FROM clientes WHERE id NOT IN (SELECT id FROM (VALUES (2),(NULL::integer)) AS lista(id));
+SELECT c.id FROM clientes c WHERE NOT EXISTS (
+ SELECT 1 FROM (VALUES (2),(NULL::integer)) AS lista(id) WHERE lista.id=c.id
+) ORDER BY c.id;</code></pre></details>
 <h3 id="N2-4.3">N2-4.3 — Investigar uma soma inflada</h3>
 <p><strong>Situa&#231;&#227;o:</strong> um relat&#243;rio diz que o pedido 101 vendeu 500 e recebeu 480. Ao abrir a venda, voc&#234; v&#234; que ela tem apenas dois itens totalizando 250 e dois recebimentos totalizando 240. O erro pode estar na consulta, e n&#227;o nos dados.</p>
 <p><strong>Seu objetivo:</strong> localizar em que etapa as linhas se multiplicaram e corrigir o c&#225;lculo sem apagar valores repetidos leg&#237;timos.</p>
@@ -460,6 +675,21 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>duas rela&#231;&#245;es de um para muitos podem formar 2 &#215; 2 combina&#231;&#245;es. A corre&#231;&#227;o &#233; levar cada origem &#224; mesma unidade de an&#225;lise, aqui uma linha por pedido, antes de junt&#225;-las. SUM(DISTINCT valor) tamb&#233;m descartaria valores iguais de opera&#231;&#245;es diferentes.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>jun&#231;&#227;o ing&#234;nua produz quatro linhas, subtotal inflado=500 e recebido inflado=480. A vers&#227;o correta retorna bruto dos itens=250, recebido=240 e l&#237;quido contratado=240. Valores diferentes aqui podem representar desconto, n&#227;o erro de cadastro.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-4.3"><summary>Ver uma solução possível — N2-4.3</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-4.3: duas rela&#231;&#245;es 1:N produzem multiplica&#231;&#227;o antes do GROUP BY.
+SELECT COUNT(*) AS linhas,SUM(i.quantidade*i.preco_unitario) AS itens_inflados,
+ SUM(CASE WHEN pg.tipo=&#39;recebimento&#39; THEN pg.valor ELSE -pg.valor END) AS recebido_inflado
+FROM pedidos p JOIN itens i ON i.pedido_id=p.id JOIN pagamentos pg ON pg.pedido_id=p.id
+WHERE p.id=101; -- 4,500,480
+WITH ti AS (
+ SELECT pedido_id,SUM(quantidade*preco_unitario) AS bruto_itens FROM itens GROUP BY pedido_id
+), rp AS (
+ SELECT pedido_id,SUM(CASE WHEN tipo=&#39;recebimento&#39; THEN valor ELSE -valor END) AS recebido
+ FROM pagamentos GROUP BY pedido_id
+)
+SELECT p.id,ti.bruto_itens,COALESCE(rp.recebido,0) AS recebido,
+ p.valor_total-COALESCE(p.desconto,0) AS contratado
+FROM pedidos p LEFT JOIN ti ON ti.pedido_id=p.id LEFT JOIN rp ON rp.pedido_id=p.id WHERE p.id=101;
+-- DISTINCT descartaria tamb&#233;m valores iguais leg&#237;timos em outras cargas.</code></pre></details>
 <h3 id="N2-4.4">N2-4.4 — &#218;ltimo pedido sem perder clientes</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o atendimento quer ver a &#250;ltima intera&#231;&#227;o comercial de cada cliente. Mesmo quem nunca pediu precisa aparecer. Um pedido cancelado tamb&#233;m conta como intera&#231;&#227;o para esta tela, embora n&#227;o conte como receita.</p>
 <p><strong>Seu objetivo:</strong> escolher apenas o pedido mais recente de cada pessoa, com uma regra expl&#237;cita de desempate.</p>
@@ -473,6 +703,20 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>LATERAL permite que a consulta &#224; direita use o id do cliente da linha &#224; esquerda. Na vers&#227;o com janela, o filtro de posi&#231;&#227;o deve preservar o LEFT JOIN. Retire ORDER BY das consultas internas da compara&#231;&#227;o por conjuntos.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>ids dos &#250;ltimos pedidos dos clientes 1 a 6: 108,103,112,111,110,109; clientes 7 e 8 ficam com NULL. As vers&#245;es devem retornar o mesmo conjunto.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-4.4"><summary>Ver uma solução possível — N2-4.4</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-4.4: LEFT JOIN LATERAL e alternativa equivalente por janela.
+SELECT c.id AS cliente_id,ult.id AS pedido_id,ult.data_pedido
+FROM clientes c LEFT JOIN LATERAL (
+ SELECT p.id,p.data_pedido FROM pedidos p WHERE p.cliente_id=c.id
+ ORDER BY p.data_pedido DESC,p.id DESC LIMIT 1
+) ult ON true ORDER BY c.id;
+WITH ordenados AS (
+ SELECT *,ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY data_pedido DESC,id DESC) AS rn FROM pedidos
+)
+SELECT c.id AS cliente_id,p.id AS pedido_id,p.data_pedido
+FROM clientes c LEFT JOIN ordenados p ON p.cliente_id=c.id AND p.rn=1 ORDER BY c.id;
+-- Para provar equival&#234;ncia em SQL, envolva as duas vers&#245;es (sem ORDER BY) em CTEs
+-- a e b e execute (SELECT * FROM a EXCEPT SELECT * FROM b)
+-- UNION ALL (SELECT * FROM b EXCEPT SELECT * FROM a): zero linhas.</code></pre></details>
 <h3 id="N2-4.5">N2-4.5 — Auditoria com registros ausentes dos dois lados</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a contabilidade recebe dois arquivos: um com o total informado no cabe&#231;alho das vendas e outro com os totais calculados pelos itens. Al&#233;m de valores diferentes, pode faltar um pedido em qualquer dos arquivos. Comparar s&#243; os registros presentes nos dois esconderia parte dos problemas.</p>
 <p><strong>Seu objetivo:</strong> gerar uma lista &#250;nica de diverg&#234;ncias, distinguindo valor incorreto de registro ausente.</p>
@@ -486,6 +730,20 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>a coluna-chave NULL de um dos lados indica aus&#234;ncia naquela fonte. IS DISTINCT FROM compara os totais incluindo casos com NULL; uma compara&#231;&#227;o comum &lt;&gt; n&#227;o resolve sozinha esses casos.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>tr&#234;s ocorr&#234;ncias: 101 com diferen&#231;a de 1; 111 somente nos itens; 112 somente no cabe&#231;alho. Uma jun&#231;&#227;o interna esconderia os dois registros ausentes.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-4.5"><summary>Ver uma solução possível — N2-4.5</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-4.5: fontes simuladas; nenhuma altera&#231;&#227;o real.
+WITH cabecalhos AS (
+ SELECT id,valor_total+CASE WHEN id=101 THEN 1 ELSE 0 END AS bruto
+ FROM pedidos WHERE id&lt;&gt;111
+), totais_itens AS (
+ SELECT pedido_id,SUM(quantidade*preco_unitario) AS bruto
+ FROM itens WHERE pedido_id&lt;&gt;112 GROUP BY pedido_id
+)
+SELECT COALESCE(c.id,i.pedido_id) AS pedido_id,c.bruto AS cabecalho,i.bruto AS itens,
+ c.bruto-i.bruto AS diferenca,
+ CASE WHEN c.id IS NULL THEN &#39;somente_itens&#39;
+ WHEN i.pedido_id IS NULL THEN &#39;somente_cabecalho&#39; ELSE &#39;valor_divergente&#39; END AS motivo
+FROM cabecalhos c FULL JOIN totais_itens i ON i.pedido_id=c.id
+WHERE c.bruto IS DISTINCT FROM i.bruto ORDER BY pedido_id;</code></pre></details>
 <h3 id="N2-4.6">N2-4.6 — Pre&#231;o hist&#243;rico versus pre&#231;o atual</h3>
 <p><strong>Situa&#231;&#227;o:</strong> o cat&#225;logo aumentou o pre&#231;o do Mouse. O comercial quer simular quanto os itens de uma venda antiga custariam hoje, enquanto a contabilidade precisa manter o valor que foi vendido na &#233;poca. Usar sempre o pre&#231;o atual reescreveria a hist&#243;ria do faturamento.</p>
 <p><strong>Seu objetivo:</strong> distinguir o pre&#231;o hist&#243;rico do item do pre&#231;o atual do produto, observando o efeito de uma altera&#231;&#227;o controlada.</p>
@@ -499,6 +757,14 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>a jun&#231;&#227;o liga itens.produto_id a produtos.id. Use aliases para nomear claramente preco_historico e preco_atual nas express&#245;es e evitar a troca acidental de origem.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>antes, ambos=250; depois, hist&#243;rico=250 e cadastro atual=270; ap&#243;s ROLLBACK, pre&#231;o do Mouse=50. N&#227;o reescreva o pre&#231;o dos itens.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-4.6"><summary>Ver uma solução possível — N2-4.6</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-4.6: escrita somente no cadastro; sempre desfazer ao final.
+BEGIN;
+SELECT SUM(i.quantidade*i.preco_unitario) AS historico,SUM(i.quantidade*p.preco) AS atual
+FROM itens i JOIN produtos p ON p.id=i.produto_id WHERE i.pedido_id=101;
+UPDATE produtos SET preco=60 WHERE id=1;
+SELECT SUM(i.quantidade*i.preco_unitario) AS historico,SUM(i.quantidade*p.preco) AS atual
+FROM itens i JOIN produtos p ON p.id=i.produto_id WHERE i.pedido_id=101;
+ROLLBACK;</code></pre></details>
 <h2 id="N2-5">N2-5 — Desempenho orientado por hip&#243;teses</h2>
 <p><strong>Seu papel neste laborat&#243;rio:</strong> atuar como analista que precisa justificar uma mudan&#231;a antes de recomend&#225;-la. Voc&#234; vai levantar uma hip&#243;tese, medir o estado atual, mudar um aspecto e comparar. A pergunta n&#227;o &#233; apenas ficou mais r&#225;pido?, mas quanto trabalho o servidor realizou, que resultado produziu e que custo a mudan&#231;a trouxe?.</p>
 <p>Execute <strong>02_Preparacao_Desempenho.sql</strong> uma vez. Esperado: 300000 linhas, 1000 clientes, 15000 pendentes e 82 linhas no filtro de refer&#234;ncia. A distribui&#231;&#227;o UF/cidade tem depend&#234;ncia intencional para estudar estat&#237;sticas conjuntas; n&#227;o &#233; necess&#225;rio produzir estat&#237;sticas desatualizadas. N&#227;o altere par&#226;metros globais nem desative scans para for&#231;ar um plano.</p>
@@ -516,6 +782,18 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>EXPLAIN ANALYZE executa a consulta e devolve o plano com medidas. Se houver workers, leia tamb&#233;m Gather e loops; actual rows pode ser m&#233;dia por execu&#231;&#227;o do n&#243;. N&#227;o some buffers do pai e do filho: eles podem representar o mesmo trabalho. Use o mesmo n&#237;vel do plano para comparar etapas.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>filtro combinado=82 linhas; intervalo sem cliente=82000; tabela inteira=300000. Guarde os nove planos antes da cria&#231;&#227;o dos &#237;ndices.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-5.1"><summary>Ver uma solução possível — N2-5.1</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-5.1: primeiro execute 02_Preparacao_Desempenho.sql.
+-- REPITA CADA EXPLAIN 3 VEZES e salve os nove planos ANTES de N2-5.2.
+SELECT version();
+SELECT indexname,indexdef FROM pg_indexes WHERE schemaname=&#39;bdadosql_n2&#39; AND tablename=&#39;eventos&#39;;
+SELECT pg_table_size(&#39;bdadosql_n2.eventos&#39;) AS tabela_bytes,
+ pg_indexes_size(&#39;bdadosql_n2.eventos&#39;) AS indices_bytes;
+ANALYZE eventos;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE cliente_id=42 AND data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos;</code></pre></details>
 <h3 id="N2-5.2">N2-5.2 — &#205;ndice composto e seu custo</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a aplica&#231;&#227;o usa muito a busca por cliente e per&#237;odo. A equipe prop&#244;s um &#237;ndice nas duas colunas, mas quer saber se ele tamb&#233;m ajuda uma consulta s&#243; por data e se vale a pena para exportar a tabela inteira.</p>
 <p><strong>Seu objetivo:</strong> testar uma hip&#243;tese de &#237;ndice com as mesmas consultas da linha de base e contabilizar seu custo de armazenamento.</p>
@@ -529,6 +807,10 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>um &#237;ndice composto se parece com uma lista organizada por cliente e, dentro de cada cliente, por data. Ele pode reduzir o trabalho da busca seletiva, mas ler grande parte da tabela pode favorecer outra estrat&#233;gia. N&#227;o force o tipo de scan nem trate cost como tempo em milissegundos.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>resultados id&#234;nticos aos da linha de base; conclus&#227;o baseada em buffers, estimativas, linhas e custo de armazenamento, al&#233;m do tempo. N&#227;o confunda cost com milissegundos.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-5.2"><summary>Ver uma solução possível — N2-5.2</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-5.2: ap&#243;s cria&#231;&#227;o, repetir CADA EXPLAIN de N2-5.1 tr&#234;s vezes.
+CREATE INDEX n2_eventos_cliente_data_idx ON eventos (cliente_id,data_evento);
+-- Execute novamente as tr&#234;s consultas EXPLAIN de N2-5.1, sem recriar a base.
+SELECT pg_size_pretty(pg_relation_size(&#39;bdadosql_n2.n2_eventos_cliente_data_idx&#39;)) AS tamanho_indice;</code></pre></details>
 <h3 id="N2-5.3">N2-5.3 — &#205;ndice parcial para a fila pendente</h3>
 <p><strong>Situa&#231;&#227;o:</strong> a opera&#231;&#227;o tem uma tela que exibe somente os primeiros 50 eventos pendentes de mar&#231;o. Pendentes s&#227;o uma pequena parte da tabela. A proposta &#233; indexar apenas essa fila, aproveitando tamb&#233;m a ordem usada na tela.</p>
 <p><strong>Seu objetivo:</strong> avaliar um &#237;ndice parcial e entender quais consultas ficam fora de sua cobertura.</p>
@@ -542,6 +824,21 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>o WHERE de CREATE INDEX determina quais linhas entram no &#237;ndice. Ele n&#227;o altera nem exclui linhas da tabela. ORDER BY e LIMIT fazem parte do problema: buscar todas as linhas e ordenar no cliente seria outro experimento.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>h&#225; 4000 pendentes em mar&#231;o antes do LIMIT; a busca limitada retorna 50 linhas. N&#227;o exija uso do &#237;ndice se o plano real justificar outra estrat&#233;gia. Sua conclus&#227;o deve distinguir predicado do &#237;ndice, ordena&#231;&#227;o e limite.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-5.3"><summary>Ver uma solução possível — N2-5.3</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-5.3: executar EXPLAIN tr&#234;s vezes antes, criar &#237;ndice, repetir tr&#234;s vezes.
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE status=&#39;pendente&#39; AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;
+ORDER BY data_evento,id LIMIT 50;
+CREATE INDEX n2_eventos_pendentes_idx ON eventos (data_evento,id) WHERE status=&#39;pendente&#39;;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE status=&#39;pendente&#39; AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;
+ORDER BY data_evento,id LIMIT 50;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos
+WHERE status=&#39;pago&#39; AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;
+ORDER BY data_evento,id LIMIT 50;
+SELECT COUNT(*) FROM eventos WHERE status=&#39;pendente&#39;
+AND data_evento&gt;=DATE &#39;2026-03-01&#39; AND data_evento&lt;DATE &#39;2026-04-01&#39;; -- 4000
+SELECT indexrelname,pg_size_pretty(pg_relation_size(indexrelid)) AS tamanho
+FROM pg_stat_user_indexes WHERE schemaname=&#39;bdadosql_n2&#39; AND relname=&#39;eventos&#39;;</code></pre></details>
 <h3 id="N2-5.4">N2-5.4 — &#205;ndice de express&#227;o</h3>
 <p><strong>Situa&#231;&#227;o:</strong> os emails dos eventos vieram em mai&#250;sculas, mas a aplica&#231;&#227;o recebe pesquisas em min&#250;sculas e usa lower(email) no filtro. Um &#237;ndice na coluna original organiza o texto original; a consulta trabalha com o resultado de uma fun&#231;&#227;o.</p>
 <p><strong>Seu objetivo:</strong> testar um &#237;ndice na express&#227;o realmente usada pela busca e provar que ele n&#227;o muda os registros encontrados.</p>
@@ -555,6 +852,12 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>o &#237;ndice deve corresponder &#224; express&#227;o do filtro, e n&#227;o apenas mencionar a mesma coluna. Um Bitmap Scan pode ser uma escolha v&#225;lida: descreva o que o plano fez em vez de exigir o texto Index Scan.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>300 linhas nas duas condi&#231;&#245;es; express&#227;o no filtro compat&#237;vel com a express&#227;o indexada. Observe eventuais Bitmap Scans sem trat&#225;-los como falha.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-5.4"><summary>Ver uma solução possível — N2-5.4</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-5.4: tr&#234;s execu&#231;&#245;es antes/depois; preserve o mesmo SELECT *.
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE lower(email)=&#39;cliente42@example.test&#39;;
+CREATE INDEX n2_eventos_email_lower_idx ON eventos (lower(email));
+ANALYZE eventos;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE lower(email)=&#39;cliente42@example.test&#39;;
+SELECT id FROM eventos WHERE lower(email)=&#39;cliente42@example.test&#39; ORDER BY id; -- 300 ids</code></pre></details>
 <h3 id="N2-5.5">N2-5.5 — Estat&#237;sticas individuais e depend&#234;ncia entre colunas</h3>
 <p><strong>Situa&#231;&#227;o:</strong> cada evento tem UF e cidade. Nesta carga, PR aparece sempre com Curitiba e SP sempre com Santos. Filtrar PR e Curitiba n&#227;o s&#227;o duas redu&#231;&#245;es independentes da popula&#231;&#227;o. O planejador pode precisar de informa&#231;&#227;o conjunta para estimar melhor a quantidade de linhas.</p>
 <p><strong>Seu objetivo:</strong> relacionar estimativas com a distribui&#231;&#227;o real e avaliar estat&#237;sticas de depend&#234;ncia entre colunas.</p>
@@ -568,6 +871,17 @@ ORDER BY nome;
 </ol></details>
 <details class="dica"><summary>Ver dica para come&#231;ar</summary><p>60% das linhas s&#227;o PR e tamb&#233;m Curitiba. Tratar os filtros como independentes sugeriria 60% &#215; 60%=36%; com depend&#234;ncia, eles podem descrever os mesmos 60%. Esse c&#225;lculo explica a hip&#243;tese, mas a evid&#234;ncia final deve vir do seu plano. Se a estimativa j&#225; era boa, registre isso.</p></details>
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>180000 linhas reais, PR aparece apenas com Curitiba e SP apenas com Santos. As condi&#231;&#245;es s&#227;o dependentes: n&#227;o reduzem a popula&#231;&#227;o independentemente. N&#227;o confunda correlation de pg_stats (ordem f&#237;sica de uma coluna) com dependencies (rela&#231;&#227;o entre colunas). Criar estat&#237;sticas n&#227;o cria &#237;ndice nem reorganiza a tabela. Se a estimativa j&#225; era boa, documente isso.</p></details>
+<details class="solucao-exercicio" id="solucao-N2-5.5"><summary>Ver uma solução possível — N2-5.5</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-5.5: compare a estimativa ANTES de criar o objeto de estat&#237;sticas.
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE uf=&#39;PR&#39; AND cidade=&#39;Curitiba&#39;;
+SELECT attname,null_frac,n_distinct,most_common_vals,most_common_freqs,histogram_bounds,correlation
+FROM pg_stats WHERE schemaname=&#39;bdadosql_n2&#39; AND tablename=&#39;eventos&#39;
+AND attname IN (&#39;cliente_id&#39;,&#39;uf&#39;,&#39;cidade&#39;) ORDER BY attname;
+SELECT uf,cidade,COUNT(*) FROM eventos GROUP BY uf,cidade ORDER BY uf,cidade;
+CREATE STATISTICS bdadosql_n2.n2_eventos_uf_cidade_stats (dependencies) ON uf,cidade FROM eventos;
+ANALYZE eventos;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos WHERE uf=&#39;PR&#39; AND cidade=&#39;Curitiba&#39;;
+SELECT statistics_name,attnames,kinds,dependencies FROM pg_stats_ext
+WHERE schemaname=&#39;bdadosql_n2&#39; AND tablename=&#39;eventos&#39;;</code></pre></details>
 <h3 id="N2-5.6">N2-5.6 — Organiza&#231;&#227;o f&#237;sica, vers&#245;es mortas e relat&#243;rio final</h3>
 <p><strong>Situa&#231;&#227;o:</strong> depois de testar &#237;ndices, a equipe quer investigar duas perguntas diferentes: aproximar fisicamente os eventos do mesmo cliente reduz leituras? E o que acontece com o espa&#231;o ap&#243;s atualiza&#231;&#245;es e exclus&#245;es? Misturar as experi&#234;ncias na tabela original prejudicaria as compara&#231;&#245;es anteriores.</p>
 <p><strong>Seu objetivo:</strong> separar organiza&#231;&#227;o f&#237;sica, limpeza e estat&#237;sticas usando uma c&#243;pia controlada dos eventos.</p>
@@ -584,6 +898,36 @@ ORDER BY nome;
 <details class="conferencia"><summary>Ver como conferir seu resultado</summary><p>ap&#243;s as escritas, 270000 linhas vivas, 60000 revisadas e nenhuma com id&gt;270000. At&#233; 90000 vers&#245;es mortas podem ter sido geradas pelas duas escritas; autovacuum, poda e outras condi&#231;&#245;es afetam o que o VACUUM reporta. Espa&#231;o reutiliz&#225;vel n&#227;o obriga redu&#231;&#227;o do arquivo. CLUSTER exige bloqueio exclusivo e n&#227;o mant&#233;m a organiza&#231;&#227;o nas novas escritas.</p></details>
 <p><strong>Extens&#227;o opcional:</strong> registre os tamanhos, execute VACUUM FULL somente na c&#243;pia, isoladamente, depois ANALYZE, e compare. Ele reescreve a tabela e exige espa&#231;o e bloqueio exclusivo; n&#227;o &#233; manuten&#231;&#227;o necess&#225;ria para concluir a tarefa. N&#227;o misture medi&#231;&#245;es dessa etapa com a linha de base original.</p>
 <p>Entregue relat&#243;rio de uma p&#225;gina: hip&#243;tese, m&#233;todo, evid&#234;ncias, conclus&#227;o, limita&#231;&#227;o e recomenda&#231;&#227;o de quais &#237;ndices manter para as consultas testadas. Uma conclus&#227;o de aus&#234;ncia de ganho &#233; v&#225;lida se sustentada pelos dados. Distingua limpeza (VACUUM), atualiza&#231;&#227;o de estat&#237;sticas (ANALYZE) e organiza&#231;&#227;o f&#237;sica (CLUSTER/FULL).</p>
+<details class="solucao-exercicio" id="solucao-N2-5.6"><summary>Ver uma solução possível — N2-5.6</summary><p>Esta é uma forma de resolver o exercício; outras consultas podem atender às mesmas regras. Use a sessão com <code>SET search_path TO bdadosql_n2, public;</code> já configurado. Execute por etapas: as tentativas que devem gerar erro estão comentadas e precisam ser executadas separadamente. Confira o estado atual antes de repetir alterações ou criar objetos.</p><pre><code>-- N2-5.6: c&#243;pia independente; s&#243; criar uma vez.
+CREATE TABLE eventos_fisicos AS SELECT * FROM eventos;
+CREATE INDEX n2_fisicos_cliente_data_idx ON eventos_fisicos (cliente_id,data_evento);
+ANALYZE eventos_fisicos;
+SELECT correlation FROM pg_stats WHERE schemaname=&#39;bdadosql_n2&#39;
+AND tablename=&#39;eventos_fisicos&#39; AND attname=&#39;cliente_id&#39;;
+-- Medir tr&#234;s vezes ANTES do CLUSTER:
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos_fisicos
+WHERE cliente_id=42 AND data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+CLUSTER bdadosql_n2.eventos_fisicos USING n2_fisicos_cliente_data_idx;
+ANALYZE eventos_fisicos;
+-- Medir tr&#234;s vezes DEPOIS do CLUSTER:
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM eventos_fisicos
+WHERE cliente_id=42 AND data_evento BETWEEN DATE &#39;2026-03-01&#39; AND DATE &#39;2026-04-10&#39;;
+SELECT correlation FROM pg_stats WHERE schemaname=&#39;bdadosql_n2&#39;
+AND tablename=&#39;eventos_fisicos&#39; AND attname=&#39;cliente_id&#39;;
+UPDATE eventos_fisicos SET status=&#39;revisado&#39; WHERE id&lt;=60000; -- 60000
+DELETE FROM eventos_fisicos WHERE id&gt;270000; -- 30000
+SELECT COUNT(*) AS total,COUNT(*) FILTER (WHERE status=&#39;revisado&#39;) AS revisados,
+ COUNT(*) FILTER (WHERE id&gt;270000) AS acima_limite FROM eventos_fisicos; -- 270000,60000,0
+SELECT pg_table_size(&#39;bdadosql_n2.eventos_fisicos&#39;) AS tabela_bytes,
+ pg_indexes_size(&#39;bdadosql_n2.eventos_fisicos&#39;) AS indices_bytes,
+ pg_total_relation_size(&#39;bdadosql_n2.eventos_fisicos&#39;) AS total_bytes;
+-- Execute SOMENTE este comando, em Auto-commit, sem transa&#231;&#227;o pendente:
+VACUUM (VERBOSE, ANALYZE) bdadosql_n2.eventos_fisicos;
+-- Repita a consulta de tamanhos acima e salve as mensagens do VACUUM.
+-- Extens&#227;o OPCIONAL, executar isoladamente e somente na c&#243;pia:
+-- VACUUM FULL bdadosql_n2.eventos_fisicos;
+-- ANALYZE bdadosql_n2.eventos_fisicos;
+-- Repita a consulta de tamanhos; n&#227;o confunda este estado com a linha de base.</code></pre></details>
 <h2>Modelo de evid&#234;ncias e avalia&#231;&#227;o</h2>
 <p>Por tarefa, salve: identificador, SQL, estado inicial necess&#225;rio, resultado esperado/obtido, explica&#231;&#227;o e corre&#231;&#227;o depois da primeira tentativa. Os erros intencionais s&#227;o evid&#234;ncia de integridade, n&#227;o falhas a esconder.</p>
 <div class="table-wrap"><table><thead><tr>

@@ -26,3 +26,5 @@ Na revisão didática, os 30 enunciados receberam contexto, objetivo, dados de p
 Na revisão de apresentação dos passos, foram conferidas 30 seções HTML details, inicialmente fechadas, com o controle Ver passo a passo e as listas numeradas preservadas. As 30 soluções continuam em seções recolhidas separadas.
 
 A apresentação também recolhe as 30 dicas e as 30 conferências em controles independentes. Foram conferidos o estado inicialmente fechado, uma seção de cada tipo por exercício e a preservação dos textos e das soluções.
+
+Foram acrescentadas 30 soluções expansíveis junto aos exercícios, geradas dos mesmos blocos SQL da coleção final. A conferência de DOM verifica uma solução fechada por exercício, o vínculo correto pelo identificador e a igualdade com o SQL de origem.

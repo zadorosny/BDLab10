@@ -6,6 +6,8 @@ Os exercícios acompanham a equipe de dados da loja fictícia Horizonte. Cada um
 
 No HTML, passos, dicas e conferências ficam escondidos inicialmente. Cada exercício tem controles separados: **Ver passo a passo**, **Ver dica para começar** e **Ver como conferir seu resultado**. Clique para expandir ou recolher cada seção.
 
+Cada exercício também tem **Ver uma solução possível**, com o SQL comentado da tarefa, inicialmente recolhido. Consulte depois da tentativa. As soluções também continuam reunidas no fim da página.
+
 | Laboratório | Tema | Desafios |
 |---|---|---:|
 | N2-1 | Integridade, transações, SAVEPOINT, importação e UPSERT | 6 |

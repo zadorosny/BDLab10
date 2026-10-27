@@ -33,4 +33,4 @@ Para repetir a trilha, prefira outro banco de treinamento. Os preparadores não 
 
 O HTML é gerado a partir do roteiro e das soluções por `gerar_html_nivel2.ps1`, executável no PowerShell do Windows. Você só precisa desse gerador se editar o material; para estudar, abra o HTML já incluído.
 
-Consulte [VALIDACAO.md](VALIDACAO.md) para o que foi testado. O livro não está incluído. Os recursos adicionais do nível 2 vão além do recorte original dos capítulos; referências oficiais estão no roteiro.
+Consulte [VALIDACAO.md](VALIDACAO.md) para o que foi testado. O livro não é distribuído no repositório; coloque sua cópia como `PG_BruceMomjian.pdf` na pasta principal. Os recursos adicionais do nível 2 vão além do recorte original dos capítulos; referências oficiais estão no roteiro.

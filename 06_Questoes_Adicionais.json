@@ -4,11 +4,11 @@
         "context":  "Uma tabela de contatos de teste possui as colunas nome VARCHAR(50), cidade VARCHAR(50) e idade INTEGER, nessa ordem. A aplicação recebeu os dados Ana, Curitiba e 22. O desenvolvedor escreveu INSERT INTO contatos VALUES (\u0027Curitiba\u0027, \u0027Ana\u0027, 22). Não há restrições adicionais.",
         "q":  "Qual é o efeito esperado dessa inserção?",
         "a":  [
-                  "A linha é inserida, mas Curitiba fica em nome e Ana em cidade, pois os dois valores são compatíveis com os tipos de destino.",
-                  "A operação falha porque o PostgreSQL identifica que Curitiba é uma cidade, e não um nome de pessoa.",
-                  "A linha é inserida com os campos corrigidos pelo significado dos textos.",
-                  "A operação falha porque INSERT sem lista de colunas não é permitido.",
-                  "A linha é inserida, mas o banco troca automaticamente a ordem das colunas da tabela."
+                  "A linha é inserida com Curitiba em nome e Ana em cidade, pois os dois textos são compatíveis com as colunas.",
+                  "A operação falha, pois o PostgreSQL percebe que Curitiba é nome de cidade, e não de pessoa.",
+                  "A operação falha por tipo incompatível, pois \u0027Ana\u0027 não pode ser gravado em uma coluna de cidade.",
+                  "A operação falha, pois INSERT sem lista de colunas só é aceito quando a tabela tem uma coluna.",
+                  "A linha é inserida, e o PostgreSQL emite um aviso de que os valores parecem estar trocados."
               ],
         "explanation":  "Sem lista de colunas, os valores seguem a ordem declarada. O sistema verifica tipos e restrições, não o significado de um nome ou cidade. Como ambos são textos válidos, esse erro pode passar silenciosamente. Prefira INSERT INTO contatos (nome,cidade,idade) VALUES (\u0027Ana\u0027,\u0027Curitiba\u0027,22)."
     },
@@ -34,9 +34,9 @@
                   "UPDATE contatos SET cidade = \u0027Recife\u0027 WHERE nome = \u0027Ana\u0027;",
                   "UPDATE contatos SET cidade = \u0027Recife\u0027;",
                   "UPDATE contatos SET nome = \u0027Recife\u0027 WHERE id = 2;",
-                  "UPDATE contatos SET cidade = \u0027Santos\u0027 WHERE id = 2;"
+                  "UPDATE contatos SET nome = \u0027Recife\u0027 WHERE nome = \u0027Ana\u0027;"
               ],
-        "explanation":  "O filtro pela chave id=2 identifica exatamente a linha desejada. O filtro pelo nome atingiria as duas pessoas; a ausência de WHERE atingiria todas; alterar nome ou manter Santos não cumpre a solicitação."
+        "explanation":  "O filtro pela chave id=2 identifica exatamente a linha desejada. O filtro pelo nome atingiria as duas pessoas; a ausência de WHERE atingiria todas; gravar Recife em nome muda a coluna errada."
     },
     {
         "id":  "C3-Q14",
@@ -69,37 +69,37 @@
         "context":  "Depois de executar DELETE FROM rascunho, um aluno quer reutilizar a tabela vazia para uma nova tentativa. O comando terminou com sucesso, e nenhuma outra operação alterou a estrutura.",
         "q":  "O que ele pode fazer em seguida?",
         "a":  [
-                  "Executar INSERT INTO rascunho com valores compatíveis, pois a definição da tabela continua existindo.",
+                  "Inserir novas linhas com valores compatíveis, pois a definição da tabela continua existindo.",
                   "Executar CREATE TABLE rascunho com o mesmo nome, pois DELETE removeu o objeto tabela.",
                   "Recriar as colunas antes do INSERT, pois DELETE preserva o nome da tabela, mas remove sua definição de campos.",
-                  "Inserir somente as colunas com DEFAULT, pois DELETE torna as demais colunas indisponíveis até a próxima conexão.",
-                  "Usar SELECT para recuperar automaticamente as linhas excluídas, pois a estrutura foi preservada."
+                  "Executar VACUUM antes do INSERT, pois a tabela só aceita novas linhas depois que o espaço é liberado.",
+                  "Executar ROLLBACK para recuperar as linhas, pois com Auto-commit o DELETE ainda não foi confirmado."
               ],
-        "explanation":  "DELETE elimina linhas, não tipos, colunas ou a tabela. Um novo INSERT pode reutilizá-la. Criar outra tabela com o mesmo nome no mesmo schema causaria conflito. Preservar a estrutura não recupera os registros removidos."
+        "explanation":  "DELETE elimina linhas, não tipos, colunas ou a tabela. Um novo INSERT pode reutilizá-la. Criar outra tabela com o mesmo nome no mesmo schema causaria conflito. Com Auto-commit ativo, o DELETE já foi confirmado, e ROLLBACK não traz as linhas de volta."
     },
     {
         "id":  "C3-Q17",
         "context":  "Um iniciante executa SELECT sobrenome FROM contatos, mas a tabela contém somente id, nome, cidade e idade. A conexão está correta e a tabela existe.",
         "q":  "Qual interpretação do erro é adequada?",
         "a":  [
-                  "A coluna solicitada não existe nessa tabela; é preciso verificar a estrutura e usar o nome correto.",
+                  "A coluna sobrenome não existe na tabela; é preciso conferir a estrutura e usar um nome válido.",
                   "A tabela está vazia e o PostgreSQL não conhece as colunas antes do primeiro INSERT.",
                   "O usuário precisa inserir uma linha com sobrenome para que a coluna seja criada automaticamente.",
-                  "O SELECT deve ser substituído por UPDATE para consultar uma coluna ausente.",
-                  "O erro indica que falta ORDER BY, sem o qual as colunas não podem ser identificadas."
+                  "A coluna sobrenome existe na tabela, mas está vazia, e o PostgreSQL acusa erro quando nenhuma linha tem valor.",
+                  "O erro indica falta de permissão de leitura, que o PostgreSQL acusa como coluna inexistente."
               ],
         "explanation":  "A lista de colunas é definida na estrutura da tabela. SELECT não cria colunas e uma tabela vazia continua tendo estrutura conhecida. Confira a definição — por exemplo com a interface do cliente ou com \\d contatos no psql — e ajuste a consulta."
     },
     {
         "id":  "C3-Q18",
         "context":  "Um arquivo de exportação precisa ter cidade na primeira coluna e nome na segunda. A tabela contatos foi criada com nome antes de cidade. Nenhuma transformação de dados é necessária.",
-        "q":  "Qual consulta controla diretamente a ordem das colunas na saída?",
+        "q":  "Qual consulta entrega as colunas na ordem que a exportação exige?",
         "a":  [
                   "SELECT cidade, nome FROM contatos;",
                   "SELECT nome, cidade FROM contatos ORDER BY cidade;",
                   "SELECT * FROM contatos ORDER BY cidade, nome;",
-                  "SELECT nome, cidade FROM contatos WHERE cidade IS NOT NULL;",
-                  "SELECT * FROM contatos;"
+                  "SELECT nome, cidade FROM contatos ORDER BY cidade, nome;",
+                  "SELECT nome, cidade FROM contatos;"
               ],
         "explanation":  "A ordem das expressões na lista SELECT define a ordem das colunas retornadas. ORDER BY controla a sequência das linhas, não a posição das colunas. Não é necessário recriar a tabela para mudar essa apresentação."
     },
@@ -173,10 +173,10 @@
         "context":  "Duas linhas têm cidade=\u0027Santa Helena\u0027, uma com uf=\u0027PR\u0027 e outra com uf=\u0027SC\u0027. Uma terceira repete cidade=\u0027Santa Helena\u0027, uf=\u0027PR\u0027. Você executa SELECT DISTINCT cidade, uf FROM clientes.",
         "q":  "Quantas linhas resultam e qual é o motivo?",
         "a":  [
-                  "Duas, pois DISTINCT considera a combinação cidade e UF.",
-                  "Uma, pois DISTINCT considera somente a primeira coluna selecionada.",
-                  "Três, pois DISTINCT não pode eliminar duplicatas de colunas textuais.",
-                  "Duas, porque DISTINCT mantém sempre a primeira e a última linha inseridas.",
+                  "Duas: os pares de PR repetidos viram uma linha, e o par de SC forma outra.",
+                  "Uma, pois DISTINCT olha a primeira coluna selecionada e ignora as seguintes.",
+                  "Três, pois DISTINCT compara as linhas completas da tabela, e não só as colunas selecionadas.",
+                  "Duas, pois DISTINCT conta apenas as UFs diferentes, sem considerar a cidade.",
                   "Uma, porque o mesmo nome de cidade implica a mesma localização, independentemente da UF."
               ],
         "explanation":  "DISTINCT atua sobre todas as expressões selecionadas em conjunto. Os dois pares PR são iguais e viram uma linha; o par SC é diferente e permanece. A identidade geográfica não é inferida pelo texto da cidade."
@@ -203,7 +203,7 @@
                   "pendente, porque o default substitui qualquer ausência em toda leitura.",
                   "O texto \u0027NULL\u0027, porque VARCHAR converte o marcador de ausência em quatro caracteres.",
                   "Uma string vazia, porque o tipo VARCHAR não distingue vazio de NULL.",
-                  "O último status não nulo inserido na tabela, pois DEFAULT reutiliza o valor anterior."
+                  "pendente, pois o DEFAULT definido na criação também substitui um NULL informado no INSERT."
               ],
         "explanation":  "DEFAULT é usado quando a coluna é omitida ou quando a palavra DEFAULT é solicitada no INSERT. O literal SQL NULL expressa uma escolha diferente e fica armazenado como ausência se as restrições permitirem."
     },
@@ -212,10 +212,10 @@
         "context":  "Um relatório usa SELECT upper(nome) AS nome_maiusculo FROM clientes. Antes da consulta, uma linha contém nome=\u0027Ana Silva\u0027. Nenhum UPDATE é executado.",
         "q":  "Qual resultado e qual efeito no cadastro são esperados?",
         "a":  [
-                  "O resultado mostra ANA SILVA sob o rótulo nome_maiusculo; o valor armazenado continua Ana Silva.",
-                  "O resultado mostra ANA SILVA e a coluna armazenada passa a conter esse texto.",
-                  "O resultado continua Ana Silva; upper só altera o rótulo para maiúsculas.",
-                  "A coluna nome é renomeada permanentemente para nome_maiusculo.",
+                  "A consulta exibe ANA SILVA com o rótulo nome_maiusculo, sem alterar o valor gravado.",
+                  "Mostra ANA SILVA sob o rótulo nome_maiusculo, e o cadastro passa a guardar o nome em maiúsculas.",
+                  "Mostra Ana Silva sob o rótulo nome_maiusculo, pois upper só altera o rótulo; o cadastro continua igual.",
+                  "Mostra ANA SILVA sob o rótulo nome_maiusculo, e a coluna nome é renomeada para esse rótulo.",
                   "Uma nova coluna nome_maiusculo é criada no cadastro com o resultado calculado."
               ],
         "explanation":  "Funções no SELECT calculam valores de saída. AS dá nome à expressão no resultado. Nenhuma das duas operações equivale a UPDATE ou ALTER TABLE; uma nova consulta simples a nome continua lendo o valor original."
@@ -240,7 +240,7 @@
         "a":  [
                   "Aparece alto; acrescente primeiro WHEN preco IS NULL THEN \u0027sem preco\u0027.",
                   "Aparece baixo; substitua a primeira comparação por preco = NULL.",
-                  "Aparece NULL automaticamente; CASE nunca aplica ELSE a valores ausentes.",
+                  "Aparece NULL; nenhum ajuste é necessário, pois NULL já indica preço desconhecido.",
                   "A consulta falha; NULL não pode ser usado em uma expressão CASE.",
                   "Aparece medio; BETWEEN seria suficiente para identificar ausência."
               ],
@@ -279,8 +279,8 @@
         "a":  [
                   "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 GROUP BY cliente_id HAVING SUM(valor_total)\u003e400;",
                   "SELECT cliente_id, SUM(valor_total) FROM pedidos GROUP BY cliente_id HAVING SUM(valor_total)\u003e400;",
-                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 AND valor_total\u003e400 GROUP BY cliente_id;",
-                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE SUM(valor_total)\u003e400 GROUP BY cliente_id;",
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 AND valor_total\u003e400 GROUP BY cliente_id HAVING SUM(valor_total)\u003e400;",
+                  "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 AND SUM(valor_total)\u003e400 GROUP BY cliente_id;",
                   "SELECT cliente_id, SUM(valor_total) FROM pedidos WHERE status=\u0027pago\u0027 GROUP BY cliente_id, valor_total HAVING SUM(valor_total)\u003e400;"
               ],
         "explanation":  "WHERE remove os pedidos não pagos antes da soma; GROUP BY forma um grupo por cliente; HAVING testa o total do grupo. Os resultados são cliente 1=500 e cliente 2=450. Filtrar valor_total\u003e400 antes da soma perderia os dois pedidos pagos do cliente 1."
@@ -292,7 +292,7 @@
         "a":  [
                   "COUNT(*)=3 e COUNT(uf)=0.",
                   "COUNT(*)=3 e COUNT(uf)=3.",
-                  "COUNT(*)=0 e COUNT(uf)=0.",
+                  "COUNT(*)=1 e COUNT(uf)=1.",
                   "COUNT(*)=1 e COUNT(uf)=0.",
                   "Não existe grupo para UF NULL."
               ],
@@ -342,11 +342,11 @@
         "context":  "Uma tabela de preços tem os valores não nulos 50, 50 e 100. Um colega usa SELECT SUM(DISTINCT preco) e obtém 150, enquanto outro usa SELECT SUM(preco) e obtém 200.",
         "q":  "Por que os resultados diferem?",
         "a":  [
-                  "DISTINCT dentro de SUM elimina valores de preço repetidos antes de somar; não equivale a somar todas as linhas.",
-                  "SUM(DISTINCT preco) remove apenas linhas cuja chave primária é duplicada.",
-                  "SUM(preco) adiciona automaticamente um valor extra quando encontra preços iguais.",
-                  "DISTINCT converte preços para texto e a soma passa a usar ordem alfabética.",
-                  "O resultado 150 indica que uma linha com 50 foi tratada como NULL por erro de precisão."
+                  "Com DISTINCT, cada preço diferente entra uma vez (50 + 100); sem ele, entram as três linhas.",
+                  "SUM(DISTINCT preco) descarta registros duplicados; é o modo seguro de não contar a mesma entidade duas vezes.",
+                  "SUM(DISTINCT preco) é calculado sobre o índice de preco, que guarda cada valor uma única vez.",
+                  "DISTINCT é aplicado depois da soma e retira do total o 50, por ser o valor repetido.",
+                  "SUM(preco) conta o 50 em dobro por erro de arredondamento, que SUM(DISTINCT preco) corrige."
               ],
         "explanation":  "SUM(DISTINCT preco) soma os valores distintos 50 e 100. SUM(preco) soma as três entradas, incluindo as duas ocorrências de 50. Eliminar preços repetidos não é uma forma geral de corrigir duplicação indevida de entidades em consultas."
     },
@@ -409,9 +409,9 @@
         "a":  [
                   "500; o valor do cabeçalho é repetido para cada item e foi somado duas vezes.",
                   "250; o PostgreSQL reconhece a PK e conta cada cabeçalho uma única vez no SUM.",
-                  "125; o valor do pedido é dividido automaticamente pelo número de itens.",
-                  "0; um agregado sobre uma junção exige que todos os campos sejam agrupados.",
-                  "NULL; o relacionamento um-para-muitos impede a soma de colunas do cabeçalho."
+                  "125; SUM sobre uma junção divide o valor do cabeçalho entre os itens correspondentes.",
+                  "250; SUM ignora valores repetidos vindos da mesma tabela, como faria SUM(DISTINCT).",
+                  "500; a junção duplica as linhas de itens, e o valor dos itens passa a contar em dobro."
               ],
         "explanation":  "A junção produz duas linhas com p.valor_total=250 em cada uma. SUM recebe essas duas entradas e retorna 500. Para totalizar vendas, agregue na granularidade correta; para conferir o pedido pelos itens, some quantidade*preco_unitario. SUM(DISTINCT p.valor_total) não é correção geral, pois pedidos distintos podem ter totais iguais."
     },
@@ -420,11 +420,11 @@
         "context":  "Um analista liga clientes a pedidos corretamente, mas inclui vendedores no FROM sem nenhuma condição. Há 8 pedidos com clientes válidos e 2 vendedores na tabela.",
         "q":  "Qual efeito essa falta de condição produz na quantidade de linhas?",
         "a":  [
-                  "16 linhas, pois cada resultado cliente–pedido combina com os dois vendedores.",
+                  "16, porque cada combinação cliente–pedido se repete para os dois vendedores.",
                   "8 linhas, pois as FKs permitem ao banco deduzir o vendedor de cada pedido.",
                   "10 linhas, pela soma dos pedidos com os vendedores.",
-                  "4 linhas, pois o resultado é dividido pelo número de vendedores.",
-                  "A consulta sempre retorna erro de sintaxe por haver uma tabela sem condição."
+                  "8 linhas, pois uma tabela sem condição no FROM é ignorada pelo planejador.",
+                  "A consulta falha por sintaxe, pois vendedores está no FROM sem condição."
               ],
         "explanation":  "Uma tabela sem condição de ligação participa como produto cartesiano. As oito linhas se combinam com os dois vendedores, totalizando dezesseis. A existência de FKs não escreve condições ausentes nem torna todo produto cartesiano um erro sintático."
     },
@@ -463,7 +463,7 @@
                   "itens.quantidade * produtos.preco, resultando em 140.",
                   "produtos.preco, resultando em 70, pois a quantidade já está implícita na FK.",
                   "itens.preco_unitario + produtos.preco, resultando em 120.",
-                  "itens.quantidade * produtos.preco, mas o JOIN restaurará automaticamente o preço antigo de 50."
+                  "itens.quantidade * produtos.preco, pois o JOIN lê o preço vigente na data do pedido."
               ],
         "explanation":  "O preço registrado no item captura o valor praticado naquela venda; o preço do cadastro é o valor atual. Uma junção normal não consulta automaticamente o histórico de alterações do cadastro. O subtotal histórico continua 2*50=100."
     },
@@ -486,12 +486,12 @@
         "q":  "Qual comportamento de integridade é esperado?",
         "a":  [
                   "O INSERT é rejeitado porque a referência não encontra uma chave correspondente em pedidos.",
-                  "O INSERT cria automaticamente um pedido vazio com id 999.",
-                  "O INSERT é aceito, mas a FK faz esse item aparecer em qualquer INNER JOIN futuro.",
-                  "O banco troca pedido_id por NULL automaticamente, mesmo sem regra adicional.",
-                  "O banco procura um pedido com id próximo de 999 e ajusta a referência."
+                  "O INSERT é aceito, e a FK passa a ser verificada quando um pedido 999 for criado.",
+                  "O INSERT é aceito, e o item fica marcado como órfão até que o pedido seja corrigido.",
+                  "O banco grava pedido_id como NULL, pois a FK converte referências inexistentes em ausência.",
+                  "O INSERT só é rejeitado se pedidos tiver índice em id; sem índice, a FK não consegue verificar."
               ],
-        "explanation":  "Uma FK ativa valida a correspondência da chave referenciada. Ela não inventa registros pais nem corrige referências por aproximação. O exemplo usa valor não nulo para não misturar a regra de integridade com a permissão de referências opcionais."
+        "explanation":  "Por padrão, uma FK ativa verifica a referência no próprio INSERT: não aceita a linha à espera de um pedido futuro nem troca o valor por NULL. A coluna referenciada precisa ser PK ou UNIQUE, que sempre têm índice. O exemplo usa valor não nulo para não misturar a regra de integridade com a permissão de referências opcionais."
     },
     {
         "id":  "C6-Q19",
@@ -524,11 +524,11 @@
         "context":  "Um EXPLAIN mostra cost=0.00..120.00 rows=10. Ao executar EXPLAIN ANALYZE, o tempo total é 2,5 ms. Um colega conclui que o planejador errou, pois esperava 120 ms.",
         "q":  "Qual correção conceitual deve ser feita?",
         "a":  [
-                  "cost usa unidades de custo do planejador e não equivale diretamente a milissegundos; o tempo medido é outra informação.",
-                  "O tempo deve ser multiplicado por rows, pois cost sempre mede milissegundos por linha.",
-                  "cost=120.00 significa que a tabela possui 120 páginas, portanto o tempo não pode ser 2,5 ms.",
-                  "EXPLAIN ANALYZE não executa a consulta, então 2,5 ms é apenas uma segunda estimativa.",
-                  "rows=10 significa dez execuções da consulta, e cost é o tempo somado dessas execuções."
+                  "cost está em unidades do planejador, não em milissegundos; o tempo medido pelo ANALYZE é outra grandeza.",
+                  "cost está em milissegundos por linha; multiplicado por rows=10, o tempo esperado seria ainda maior que 120 ms.",
+                  "cost=120.00 indica 120 páginas lidas; com páginas em cache, o tempo cai e o valor deixa de ser comparável.",
+                  "EXPLAIN ANALYZE não executa a consulta; os 2,5 ms são uma segunda estimativa, mais otimista que a primeira.",
+                  "rows=10 indica dez execuções da consulta, e cost é o tempo somado dessas execuções em milissegundos."
               ],
         "explanation":  "Os custos servem para comparar alternativas segundo o modelo do planejador. rows é a estimativa de linhas do nó, não o número de execuções da consulta. O tempo real é medido por EXPLAIN ANALYZE e pode ser afetado por cache e outras condições."
     },
@@ -537,11 +537,11 @@
         "context":  "Uma busca filtrada tem estimativa rows=10, mas o mesmo nó de EXPLAIN ANALYZE retorna actual rows=50000, loops=1. A tabela recebeu uma carga grande e mudou sua distribuição desde a última coleta de estatísticas.",
         "q":  "Qual investigação inicial é mais justificada por esses indícios?",
         "a":  [
-                  "Verificar e atualizar estatísticas com ANALYZE e reavaliar estimativas e plano, sem presumir que isso resolve qualquer erro de estimativa.",
-                  "Executar DROP INDEX em todos os índices, pois diferenças de rows comprovam que eles estão corrompidos.",
-                  "Trocar o SELECT por DELETE, pois actual rows mede versões mortas e não resultados.",
-                  "Executar CLUSTER, pois sua função principal é garantir igualdade entre linhas estimadas e reais.",
-                  "Converter todas as colunas para TEXT, pois colunas numéricas não possuem estatísticas de distribuição."
+                  "Atualizar as estatísticas com ANALYZE e reavaliar o plano, sem presumir que isso corrija toda estimativa.",
+                  "Recriar os índices da tabela com REINDEX, pois a diferença entre rows e actual rows indica índice corrompido.",
+                  "Executar VACUUM FULL, pois a carga grande deixou versões mortas que distorcem a estimativa e as estatísticas.",
+                  "Executar CLUSTER, pois a ordem física desalinhada faz o planejador errar a quantidade de linhas do filtro.",
+                  "Aumentar work_mem, pois estimativas baixas indicam que o planejador ficou sem memória para calcular o filtro."
               ],
         "explanation":  "Uma mudança grande de volume ou distribuição torna razoável investigar estatísticas desatualizadas. ANALYZE ajuda o planejador, mas correlações, amostragem e a forma dos predicados ainda podem causar divergências. A evidência não demonstra corrupção de índices."
     },
@@ -550,24 +550,24 @@
         "context":  "No laboratório, a primeira busca sem índice levou 20 ms e a segunda, ainda sem índice, levou 3 ms. O plano continuou Seq Scan e os buffers passaram de leituras para mais hits. Não houve alteração dos dados.",
         "q":  "Qual interpretação é compatível com essas observações?",
         "a":  [
-                  "O aquecimento de cache pode explicar a melhora; a diferença não demonstra efeito de um índice que não foi criado.",
-                  "O PostgreSQL criou automaticamente um índice na segunda execução por detectar a mesma consulta.",
-                  "Seq Scan significa necessariamente leitura física do disco, então o segundo tempo é impossível.",
-                  "Buffers hit indicam falha na leitura e devem ser contados como páginas perdidas.",
-                  "O resultado prova que estatísticas foram corrigidas pelo SELECT e o custo de planejamento desapareceu."
+                  "O cache aquecido pode explicar a melhora; a diferença não mede efeito de índice, que nem foi criado.",
+                  "O PostgreSQL criou um índice temporário na segunda execução ao reconhecer a mesma consulta repetida.",
+                  "A segunda execução reaproveitou o resultado guardado da primeira, como um cache de consultas do servidor.",
+                  "O ganho veio do ANALYZE implícito da primeira execução, que corrigiu estatísticas e mudou o custo estimado.",
+                  "Buffers hit indicam páginas que falharam na leitura; menos leituras com sucesso tornaram a busca mais rápida."
               ],
-        "explanation":  "Uma página já presente nos buffers pode ser reutilizada sem uma nova leitura pelo PostgreSQL. Isso ajuda a entender por que medir uma única execução é insuficiente. Mesmo um buffer read pode ser atendido por cache do sistema operacional; a métrica não descreve sozinha toda a cadeia de armazenamento."
+        "explanation":  "Uma página já presente nos buffers pode ser reutilizada sem uma nova leitura pelo PostgreSQL. Isso ajuda a entender por que medir uma única execução é insuficiente. O servidor não guarda resultados de consultas para reaproveitá-los, e um SELECT não executa ANALYZE. Mesmo um buffer read pode ser atendido por cache do sistema operacional; a métrica não descreve sozinha toda a cadeia de armazenamento."
     },
     {
         "id":  "C11-Q14",
         "context":  "Um índice B-tree simples em id ajuda consultas pontuais. Outro relatório solicita todas as colunas de quase todas as 200 mil linhas, sem ORDER BY. O planejador usa o índice na primeira consulta e Seq Scan na segunda.",
         "q":  "Qual conclusão é adequada?",
         "a":  [
-                  "As escolhas podem ser coerentes: a busca seletiva evita trabalho com o índice, enquanto a leitura ampla pode favorecer a varredura sequencial.",
-                  "As duas consultas deveriam usar o mesmo plano por acessarem a mesma tabela.",
-                  "A segunda consulta prova que o índice só funciona com menos de 200 mil linhas na tabela.",
-                  "A primeira consulta deveria usar Seq Scan porque o índice não contém todas as colunas retornadas.",
-                  "É obrigatório desativar Seq Scan para tornar a comparação válida e preservar a utilidade do índice."
+                  "Os planos podem ser coerentes: a busca seletiva aproveita o índice, e a leitura ampla favorece a varredura.",
+                  "As duas consultas deveriam usar o mesmo plano, pois o planejador escolhe o acesso pela tabela, não pela consulta.",
+                  "A segunda indica que o índice ficou desatualizado; com 200 mil linhas, ele precisa de REINDEX para voltar a valer.",
+                  "A primeira deveria usar Seq Scan, pois o índice não contém as demais colunas retornadas pela consulta.",
+                  "A comparação só é válida com Seq Scan desativado, para forçar as duas consultas a usar o mesmo índice."
               ],
         "explanation":  "Planos são escolhidos por consulta e condições, não apenas pela existência de um índice. Um Index Scan pode buscar colunas na tabela mesmo que não estejam no índice. Ler grande parte das páginas sequencialmente pode ser mais barato que usar acesso indexado para todas elas."
     },
@@ -577,10 +577,10 @@
         "q":  "Qual efeito de bloqueio deve ser considerado?",
         "a":  [
                   "CLUSTER obtém ACCESS EXCLUSIVE na tabela, podendo fazer a consulta aguardar até o fim da operação.",
-                  "CLUSTER bloqueia apenas INSERT; leituras nunca precisam aguardar essa operação.",
-                  "CLUSTER bloqueia apenas o índice e não interfere em acessos à tabela.",
-                  "CLUSTER usa o mesmo comportamento concorrente do VACUUM comum, sem bloqueio exclusivo da tabela.",
-                  "CLUSTER cancela automaticamente todas as consultas do servidor, inclusive em outros bancos."
+                  "CLUSTER bloqueia só as escritas; leituras continuam vendo a versão antiga da tabela até o fim da operação.",
+                  "CLUSTER bloqueia o índice usado na ordenação, mas consultas que não o usam acessam a tabela normalmente.",
+                  "CLUSTER segue o comportamento concorrente do VACUUM comum, sem bloqueio exclusivo da tabela.",
+                  "CLUSTER cria uma cópia e troca as tabelas no fim, então a consulta não espera em momento algum."
               ],
         "explanation":  "CLUSTER reescreve a organização física e adquire ACCESS EXCLUSIVE, conflitante com o acesso usual de leitura. A operação exige planejamento de execução e espaço, mesmo quando o objetivo é melhorar consultas. Não equivale à manutenção concorrente do VACUUM comum."
     },
@@ -589,11 +589,11 @@
         "context":  "Depois de excluir 20 mil eventos, um aluno executa VACUUM comum e observa que a tabela continua com tamanho semelhante no disco. Não há erro no comando e as linhas excluídas não aparecem mais nos SELECTs.",
         "q":  "Qual explicação é adequada?",
         "a":  [
-                  "O espaço elegível pode ter sido liberado para reutilização interna sem redução proporcional do arquivo; tamanho semelhante não demonstra falha.",
-                  "VACUUM só funciona se a tabela não possuir nenhum índice, então todas as exclusões foram desfeitas.",
-                  "VACUUM comum sempre devolve todo espaço ao SO; o tamanho semelhante prova que DELETE não foi confirmado.",
-                  "As linhas devem continuar visíveis a novos SELECTs até que seja executado DROP INDEX.",
-                  "O tamanho só diminui após ANALYZE, pois esse comando reescreve as páginas sem espaço livre."
+                  "O espaço pode ter sido liberado para reúso interno, sem encolher o arquivo; tamanho igual não indica falha.",
+                  "O VACUUM comum devolve o espaço ao SO; o tamanho igual indica que o DELETE não foi confirmado com COMMIT.",
+                  "O tamanho só diminui depois de ANALYZE, que reescreve as páginas e remove as que ficaram sem linhas.",
+                  "O VACUUM ignorou a tabela porque ela tem índices; seria preciso removê-los antes de liberar espaço.",
+                  "As linhas excluídas continuam ocupando espaço até o próximo CHECKPOINT, quando o arquivo é truncado."
               ],
         "explanation":  "O VACUUM comum não é uma compactação integral do arquivo. Ele pode liberar espaço reutilizável, e a possibilidade de limpar versões depende também de transações que ainda precisem delas. Uma reescrita como VACUUM FULL tem implicações diferentes e não deve ser escolhida só por esse indicador isolado."
     },
@@ -615,11 +615,11 @@
         "context":  "Uma tabela tem PK em id e FK cliente_id para clientes(id). Você inspeciona os índices e encontra o índice da PK, mas nenhum em cliente_id. A FK foi criada com sucesso.",
         "q":  "Qual conclusão está correta?",
         "a":  [
-                  "Isso é compatível com PostgreSQL: a FK não cria automaticamente índice no lado que referencia; sua utilidade deve ser avaliada conforme o uso.",
-                  "A FK está desativada, pois ela não pode existir sem índice em cliente_id.",
-                  "O índice da PK em id também indexa automaticamente cliente_id e todas as outras colunas.",
-                  "Uma FK substitui o índice de cliente_id em consultas, oferecendo a mesma estrutura de acesso.",
-                  "O índice em cliente_id só passa a existir após o primeiro JOIN entre as tabelas."
+                  "É o comportamento do PostgreSQL: a FK não cria índice na coluna que referencia; avalie se ele é útil.",
+                  "A FK foi criada sem validação, pois a restrição só fica ativa quando existe índice em cliente_id.",
+                  "O índice da PK em id também atende buscas por cliente_id, pois indexa a linha inteira.",
+                  "A FK cria um índice interno em cliente_id, que não aparece na listagem de índices da tabela.",
+                  "O índice em cliente_id é criado na primeira consulta com JOIN entre as tabelas e depois mantido."
               ],
         "explanation":  "A validação referencial e a estrutura de acesso são mecanismos diferentes. Um índice na coluna que referencia pode ajudar consultas e ações sobre o relacionamento, mas não é criado automaticamente pela FK. Avalie carga e planos em vez de supor sua existência."
     },
@@ -628,11 +628,11 @@
         "context":  "Em um trecho do plano, um nó interno mostra actual rows=3 loops=100. A equipe quer estimar quantas linhas esse nó produziu ao longo das suas execuções, distinguindo essa medida da saída final de toda a consulta.",
         "q":  "Qual leitura é a mais adequada?",
         "a":  [
-                  "Aproximadamente 300 linhas somadas nas execuções do nó; actual rows é uma média por loop e pode estar arredondado.",
-                  "Exatamente 3 linhas somadas, pois loops mede apenas a quantidade de páginas lidas.",
-                  "Exatamente 100 linhas somadas, pois loops substitui actual rows quando é maior que 1.",
-                  "Aproximadamente 103 linhas somadas, obtidas por rows mais loops.",
-                  "A consulta inteira retornou necessariamente 300 linhas, independentemente dos demais nós."
+                  "Cerca de 300 linhas no total do nó, pois actual rows é uma média por loop e pode estar arredondado.",
+                  "Exatamente 3 linhas no total do nó, pois loops conta páginas lidas, e não execuções do nó.",
+                  "Cerca de 100 linhas no total do nó, pois loops substitui actual rows quando é maior que 1.",
+                  "Cerca de 103 linhas no total do nó, obtidas somando actual rows e o número de loops.",
+                  "Cerca de 300 linhas, que são também o total retornado pela consulta inteira, qualquer que seja o plano."
               ],
         "explanation":  "EXPLAIN ANALYZE reporta linhas e tempos médios por execução quando loops\u003e1. Multiplicar dá uma noção do trabalho acumulado naquele nó, com limite de precisão por arredondamento. Isso não é necessariamente a cardinalidade final da consulta."
     },
@@ -641,12 +641,12 @@
         "context":  "No editor SQL, o aluno executou BEGIN e depois tentou VACUUM (ANALYZE) bdadosql.eventos_lab11. O servidor informa que VACUUM não pode ser executado dentro de um bloco de transação.",
         "q":  "Como conduzir corretamente essa etapa do laboratório?",
         "a":  [
-                  "Encerrar a transação de modo apropriado ao seu estado e executar VACUUM isoladamente, com autocommit ativo.",
-                  "Adicionar outro BEGIN antes de VACUUM para criar uma transação interna de manutenção.",
-                  "Substituir por VACUUM FULL dentro do mesmo bloco, pois apenas o VACUUM comum tem essa restrição.",
-                  "Criar um SAVEPOINT e executar VACUUM sem sair da transação.",
-                  "Repetir VACUUM com o schema explícito, pois qualificar a tabela dispensa a restrição transacional."
+                  "Encerrar a transação conforme seu estado, como ROLLBACK, e executar VACUUM isoladamente em autocommit.",
+                  "Adicionar outro BEGIN antes do VACUUM, criando uma transação interna só para a manutenção.",
+                  "Trocar por VACUUM FULL no mesmo bloco, pois a restrição de transação vale para o VACUUM comum.",
+                  "Criar um SAVEPOINT antes do VACUUM, para que ele rode isolado sem precisar sair da transação.",
+                  "Repetir o VACUUM com o nome qualificado pelo schema, pois o nome completo dispensa a restrição de transação."
               ],
-        "explanation":  "VACUUM não pode rodar dentro de um bloco explícito de transação. Depois do erro, pode ser necessário ROLLBACK para sair do estado abortado; não basta repetir o comando ou criar savepoint. Na interface gráfica, execute o comando isoladamente fora do modo que envolve todo o arquivo em uma transação."
+        "explanation":  "VACUUM não pode rodar dentro de um bloco explícito de transação, nem como VACUUM FULL. Depois do erro, pode ser necessário ROLLBACK para sair do estado abortado; não basta repetir o comando, qualificar o nome ou criar savepoint. Na interface gráfica, execute o comando isoladamente fora do modo que envolve todo o arquivo em uma transação."
     }
 ]

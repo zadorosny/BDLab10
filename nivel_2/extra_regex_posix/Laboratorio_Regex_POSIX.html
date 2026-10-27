@@ -5,9 +5,9 @@
 :root{color-scheme:dark;background:#0d1117;color:#e6edf3}*{box-sizing:border-box}body{font:16px/1.7 "Segoe UI",Arial,sans-serif;max-width:1100px;margin:0 auto;padding:28px}a{color:#8dcaff}a:focus-visible,summary:focus-visible{outline:3px solid #8dcaff;outline-offset:4px}nav{padding:18px;border:1px solid #364456;border-radius:10px;background:#182230;display:flex;flex-wrap:wrap;gap:12px 20px}h1{font-size:2rem}h1,h2,h3{color:#a6d5ff;line-height:1.35}h2{margin-top:2.5em;border-top:1px solid #364456;padding-top:24px}h3{margin-top:2em;scroll-margin-top:20px}p,li{max-width:95ch}li{margin:10px 0}code{font-family:Consolas,monospace;background:#203149;padding:2px 4px;border-radius:3px}pre{background:#161f2b;border:1px solid #364456;padding:18px;overflow:auto;font-size:14px;line-height:1.6}pre code{padding:0;background:transparent}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #364456;padding:10px;text-align:left}th{background:#203149}details{margin:16px 0;border:1px solid #364456;border-radius:8px;padding:14px}summary{cursor:pointer;color:#a6d5ff;font-weight:600}.intro{padding:16px;border-left:4px solid #8dcaff;background:#182230}footer{margin-top:40px;color:#b4c0cf}@media(max-width:600px){body{padding:16px}h1{font-size:1.6rem}}@media print{:root{color-scheme:light;background:white;color:black}body{max-width:none;padding:0;font-size:10pt}nav{display:none}h1,h2,h3,a,summary{color:#163b59}h2,h3{break-after:avoid}pre,code,th,.intro{background:#f0f3f6;color:black}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{break-inside:avoid}a{overflow-wrap:anywhere}@page{size:A4;margin:18mm}}
 </style></head><body>
 <nav aria-label="Navegação do laboratório"><a href="#RX-01">1–3 · Fundamentos</a><a href="#RX-04">4–6 · Validação</a><a href="#RX-07">7–10 · Transformação</a><a href="#RX-11">11–12 · Diagnóstico</a><a href="#solucoes">Soluções</a><a href="../Laboratorios_Nivel2.html#N2-1.4">Voltar ao N2-1.4</a></nav>
-<p class="intro">Extra do nível 2 · 12 exercícios · DBeaver no Windows + PostgreSQL na VM. Abra o preparador uma vez; os exercícios são somente leitura. As quatro ajudas de cada exercício começam recolhidas. Esta página funciona offline e não executa SQL nem salva progresso.</p>
 <main>
 <h1>Laborat&#243;rio extra — Express&#245;es regulares POSIX</h1>
+<p class="intro">Extra do nível 2 · 12 exercícios · DBeaver no Windows + PostgreSQL na VM. Execute o preparador uma única vez; depois, os exercícios usam somente SELECT. Em cada exercício, passo a passo, dica, conferência e solução começam recolhidos. Esta página funciona offline e não executa SQL nem salva progresso.</p>
 <p><strong>Cen&#225;rio:</strong> a equipe de cadastro da Loja Horizonte recebeu outro arquivo de contatos. Antes de import&#225;-lo, voc&#234; precisa reconhecer padr&#245;es, apresentar os dados padronizados e explicar os problemas encontrados. O objetivo &#233; aprender a construir e testar uma express&#227;o, e n&#227;o decorar um regex de email.</p>
 <p>S&#227;o <strong>12 exerc&#237;cios graduais</strong>, com dados pr&#243;prios. Este extra pode ser feito logo depois de <strong>N2-1.4 — Diagnosticar o lote bruto</strong>, ou de forma independente. Basta conhecer SELECT, WHERE e ORDER BY; CASE e as etapas com WITH s&#227;o explicados quando necess&#225;rios.</p>
 <p>Abra <strong>Laboratorio_Regex_POSIX.html</strong> no navegador do Windows e execute o SQL no DBeaver conectado ao PostgreSQL 18 da VM Hyper-V. O HTML funciona offline; o SQL &#233; executado no servidor. Reserve duas ou tr&#234;s sess&#245;es curtas, conforme seu ritmo.</p>
@@ -21,8 +21,7 @@
 <li>Use nomes qualificados, como <code>bdadosql_regex.importacao_contatos</code>, nas suas consultas. Assim, uma mudan&#231;a de search_path n&#227;o seleciona a tabela hom&#244;nima de outro laborat&#243;rio.</li>
 <li>Todos os exerc&#237;cios s&#227;o resolvidos com <strong>SELECT</strong>. Voc&#234; pode repeti-los sem restaurar a carga. Preserve os valores originais como evid&#234;ncia.</li>
 </ol>
-<pre><code>
-SELECT *
+<pre><code>SELECT *
 FROM bdadosql_regex.importacao_contatos
 ORDER BY id;
 </code></pre>
@@ -62,8 +61,7 @@ ORDER BY id;
 <p>Os nomes de Carla e Iara cont&#234;m, respectivamente, uma tabula&#231;&#227;o e uma quebra de linha reais. No script, <code>E&#39;\t&#39;</code> e <code>E&#39;\n&#39;</code> representam esses caracteres. Dependendo da grade do DBeaver, eles podem parecer espa&#231;os ou uma c&#233;lula com v&#225;rias linhas.</p>
 <h2>Guia de consulta</h2>
 <p>Uma express&#227;o regular descreve um padr&#227;o de texto. No PostgreSQL, coloque o padr&#227;o entre aspas simples:</p>
-<pre><code>
-SELECT &#39;pedido 123&#39; ~ &#39;[[:digit:]]+&#39; AS encontrou_numero;
+<pre><code>SELECT &#39;pedido 123&#39; ~ &#39;[[:digit:]]+&#39; AS encontrou_numero;
 </code></pre>
 <div class="table-wrap"><table><thead><tr>
 <th scope="col">Recurso</th>
@@ -651,4 +649,6 @@ ORDER BY id;
 -- Seis contatos passam nas tr&#234;s regras; isso n&#227;o certifica sua qualidade
 -- completa: o id 9 passa mesmo com example..test. N&#227;o importei a carga.
 -- Encaminharia esse caso para definir uma regra adicional com a equipe.&quot;</code></pre></details>
-</main><footer>BDLab10 · Extra POSIX · Fonte editável: 01_Laboratorio_Regex.md · Veja VALIDACAO.md para as conferências realizadas.</footer></body></html>
+</main><footer>BDLab10 · Extra POSIX · Fonte editável: 01_Laboratorio_Regex.md · Veja VALIDACAO.md para as conferências realizadas.</footer>
+<script src="../../copiar_codigo.js"></script>
+</body></html>

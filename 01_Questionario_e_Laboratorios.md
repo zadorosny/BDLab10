@@ -20,7 +20,7 @@ Leia o capítulo, responda às dez questões sem consultar o gabarito e execute 
 
 Use um banco descartável de treinamento e uma conta que possa criar schemas, tabelas e índices e manter os objetos que criar. Não use dados de clientes. A preparação cria o schema `bdadosql` e falha se ele já existir, para evitar sobrescrever um estudo anterior.
 
-Execute `00_preparacao.sql` uma vez. No psql, um exemplo é:
+Execute `00_preparacao.sql` uma vez. Alternativa opcional ao DBeaver: no terminal da própria VM, com o arquivo disponível nela, use o psql:
 
 ```text
 psql -h localhost -U SEU_USUARIO -d SEU_BANCO -v ON_ERROR_STOP=1 -f 00_preparacao.sql

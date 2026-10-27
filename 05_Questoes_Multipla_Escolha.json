@@ -3,10 +3,10 @@
         "id":  "C3-Q01",
         "q":  "Na organização de uma loja, qual associação entre os conceitos relacionais está correta?",
         "a":  [
-                  "O servidor atende conexões; o banco contém objetos; a tabela clientes organiza registros; uma linha representa Ana; uma coluna representa nome.",
+                  "O servidor atende conexões, o banco reúne objetos e a tabela clientes guarda registros: Ana é uma linha, e nome, uma coluna.",
                   "O servidor atende conexões; banco e schema são o mesmo nível; a tabela clientes contém registros; uma coluna representa nome.",
                   "O servidor atende conexões; a tabela é o banco da aplicação; cada linha representa uma conexão de cliente ao servidor.",
-                  "O banco agrupa tabelas; em clientes, cada coluna representa uma pessoa inteira e cada linha representa um atributo dessa pessoa.",
+                  "O servidor atende conexões; o banco contém objetos; em clientes, cada coluna é uma pessoa e cada linha é um atributo dela.",
                   "O servidor atende conexões; clientes é uma tabela; cada linha determina livremente seus próprios campos e tipos, sem estrutura comum."
               ]
     },
@@ -14,11 +14,11 @@
         "id":  "C3-Q02",
         "q":  "Após executar CREATE TABLE contatos (nome VARCHAR(50), idade INTEGER), sem outras operações, qual é o estado esperado?",
         "a":  [
-                  "Existe uma tabela vazia com duas colunas e seus tipos definidos.",
+                  "A tabela existe sem linhas, já com as duas colunas e os tipos declarados.",
                   "Existe uma tabela com uma linha preenchida com NULL em ambas as colunas.",
                   "Existe apenas uma definição provisória, materializada quando ocorrer o primeiro INSERT.",
-                  "Existe uma tabela vazia na qual qualquer texto pode ser inserido em idade.",
-                  "Existe uma tabela vazia cujos tipos serão inferidos dos valores do primeiro INSERT, independentemente dos tipos declarados."
+                  "Existe uma tabela vazia, e as duas colunas já recusam NULL por terem tipos declarados.",
+                  "Existe uma tabela vazia com duas colunas, cujos tipos serão definidos pelo primeiro INSERT."
               ]
     },
     {
@@ -26,10 +26,10 @@
         "q":  "Qual é a principal vantagem de usar INSERT INTO contatos (nome, idade) VALUES (\u0027Ana\u0027, 22)?",
         "a":  [
                   "Explicitar o destino de cada valor e reduzir a dependência da ordem declarada das colunas.",
-                  "Permitir que valores incompatíveis sejam armazenados sem conversão ou erro.",
+                  "Tornar a inserção mais rápida, pois o servidor não consulta a definição da tabela.",
                   "Ordenar fisicamente os registros pelo primeiro campo da lista de colunas.",
-                  "Impedir a inserção de outra linha com o mesmo nome, mesmo sem restrição UNIQUE.",
-                  "Preencher automaticamente todas as colunas omitidas com o último valor informado."
+                  "Manter o INSERT válido mesmo que as colunas nome ou idade sejam renomeadas depois.",
+                  "Impedir que colunas adicionadas no futuro recebam seus valores DEFAULT neste INSERT."
               ]
     },
     {
@@ -58,9 +58,9 @@
         "id":  "C3-Q06",
         "q":  "Considere uma tabela simples, sem regras ou restrições que impeçam a operação. Qual o alcance de UPDATE e DELETE sem WHERE?",
         "a":  [
-                  "Ambos afetam todas as linhas existentes; UPDATE altera valores e DELETE remove as linhas.",
-                  "Ambos afetam somente a primeira linha encontrada no plano de execução.",
-                  "UPDATE afeta todas as linhas, mas DELETE exige uma cláusula WHERE para ser válido.",
+                  "Cada comando alcança a tabela inteira: o UPDATE muda os valores de todas as linhas, e o DELETE as apaga.",
+                  "Ambos afetam somente as primeiras linhas da tabela encontradas no plano de execução.",
+                  "UPDATE afeta todas as linhas, mas DELETE sem WHERE é recusado pelo servidor para evitar perda de dados.",
                   "DELETE afeta todas as linhas, mas UPDATE altera apenas linhas com valores NULL.",
                   "Ambos afetam apenas as linhas retornadas pelo último SELECT da sessão."
               ]
@@ -71,8 +71,8 @@
         "a":  [
                   "DELETE remove as linhas e preserva a tabela; DROP remove o próprio objeto tabela, sujeito às dependências.",
                   "DELETE remove a definição da tabela; DROP preserva a definição e remove somente as linhas.",
-                  "Ambos preservam a tabela, mas DROP também redefine os valores DEFAULT.",
-                  "DELETE remove apenas linhas com NULL; DROP remove também linhas com valores preenchidos.",
+                  "DELETE remove as linhas e preserva a tabela; DROP também preserva a tabela, mas apaga seus índices e restrições.",
+                  "DELETE remove as linhas, que ainda podem ser recuperadas com SELECT; DROP remove a tabela de forma definitiva.",
                   "Ambos removem a tabela, mas DELETE mantém seus índices disponíveis para consultas."
               ]
     },
@@ -81,8 +81,8 @@
         "q":  "Como garantir a apresentação por cidade crescente e, dentro de cada cidade, por idade decrescente?",
         "a":  [
                   "Usar ORDER BY cidade ASC, idade DESC; sem ORDER BY não há garantia de ordem.",
-                  "Usar ORDER BY cidade, idade DESC; sem ORDER BY a ordem de inserção é garantida.",
-                  "Usar ORDER BY cidade DESC, idade ASC; a direção é aplicada da direita para a esquerda.",
+                  "Usar ORDER BY cidade ASC, idade DESC; sem ORDER BY a ordem de inserção é garantida.",
+                  "Usar ORDER BY cidade DESC, idade ASC; sem ORDER BY não há garantia de ordem.",
                   "Criar a tabela com cidade antes de idade; a posição das colunas define a ordem das linhas.",
                   "Usar GROUP BY cidade, idade; o agrupamento garante essas duas direções de ordenação."
               ]
@@ -102,11 +102,11 @@
         "id":  "C3-Q10",
         "q":  "Antes de um DELETE com filtro, qual conferência ajuda a identificar um conjunto de linhas incorreto?",
         "a":  [
-                  "Executar SELECT e COUNT(*) com o mesmo WHERE e conferir conteúdo e quantidade, considerando possíveis mudanças concorrentes.",
-                  "Executar COUNT(*) sem WHERE, pois o total da tabela determina quais linhas serão excluídas.",
-                  "Executar SELECT com o mesmo WHERE, o que bloqueia automaticamente todas as linhas até o DELETE seguinte.",
-                  "Executar EXPLAIN sem ANALYZE, pois ele confirma exatamente os valores de todas as linhas afetadas.",
-                  "Executar SELECT com LIMIT 1, pois uma linha correta garante que todas as demais também atendem à intenção."
+                  "Executar SELECT e COUNT(*) com o mesmo WHERE, sabendo que outras sessões ainda podem mudar as linhas.",
+                  "Executar COUNT(*) sem WHERE, pois o total da tabela mostra quantas linhas o filtro vai atingir.",
+                  "Executar SELECT e COUNT(*) com o mesmo WHERE, que reservam essas linhas contra outras sessões até o DELETE.",
+                  "Executar EXPLAIN com o mesmo WHERE, pois a estimativa de rows informa quantas linhas serão excluídas.",
+                  "Executar SELECT com o mesmo WHERE e LIMIT 1, pois uma linha certa indica que as demais também estão."
               ]
     },
     {
@@ -116,7 +116,7 @@
                   "NUMERIC(10,2), que representa valores decimais exatos dentro da precisão declarada.",
                   "DOUBLE PRECISION, pois garante representação exata de qualquer valor com duas casas.",
                   "INTEGER, que armazena diretamente os centavos após a vírgula sem mudar a unidade monetária.",
-                  "CHAR(10), pois a ordenação textual equivale à ordenação numérica de qualquer preço.",
+                  "NUMERIC sem precisão e escala, que grava os preços já arredondados para duas casas.",
                   "REAL, pois usa menos bytes e o tipo assegura exatidão decimal quando a entrada tem só duas casas."
               ]
     },
@@ -127,7 +127,7 @@
                   "\u0027D\u0027\u0027Avila\u0027",
                   "\"D\u0027Avila\"",
                   "\u0027D\u0027Avila\u0027",
-                  "\u0027D`Avila\u0027",
+                  "\u0027D\\\u0027Avila\u0027",
                   "\u0027D Avila\u0027"
               ]
     },
@@ -135,11 +135,11 @@
         "id":  "C4-Q03",
         "q":  "Por que WHERE email = NULL não encontra os clientes cujo email está ausente?",
         "a":  [
-                  "A comparação resulta em desconhecido, que não passa no WHERE; deve-se usar email IS NULL.",
+                  "Comparar com NULL dá desconhecido, e o WHERE só mantém o que é verdadeiro; use email IS NULL.",
                   "NULL é tratado como texto vazio; deve-se usar email = \u0027\u0027.",
-                  "A comparação exige converter email para texto com CAST antes de usar = NULL.",
+                  "A comparação resulta em falso para cada linha; deve-se usar email IS NULL, que testa ausência.",
                   "NULL deve ser comparado com o operador \u003c\u003e; email \u003c\u003e NULL identifica os valores ausentes.",
-                  "A comparação só encontra ausência se houver um índice; criar um índice em email torna = NULL verdadeiro."
+                  "email = NULL compara com o texto \u0027NULL\u0027; só encontraria quem tem essa palavra gravada."
               ]
     },
     {
@@ -157,9 +157,9 @@
         "id":  "C4-Q05",
         "q":  "Qual afirmação combina corretamente aliases e comentários SQL?",
         "a":  [
-                  "AS nome_rotulo muda o rótulo no resultado; -- comenta até o fim da linha e /* ... */ delimita um bloco.",
-                  "AS nome_rotulo renomeia a coluna armazenada; -- comenta até o fim da linha e /* ... */ delimita um bloco.",
-                  "AS nome_rotulo muda o rótulo no resultado; -- comenta até o próximo ponto e vírgula.",
+                  "O alias troca só o nome exibido no resultado; -- comenta o resto da linha, e /* ... */ comenta um bloco.",
+                  "AS nome_rotulo muda o nome persistente da coluna; -- comenta até o fim da linha e /* ... */ delimita um bloco.",
+                  "AS nome_rotulo muda o rótulo no resultado; -- comenta até o próximo ponto e vírgula e /* ... */ delimita um bloco.",
                   "AS nome_rotulo cria uma cópia persistente da coluna; /* ... */ comenta somente uma linha.",
                   "AS nome_rotulo altera o tipo da coluna no resultado; -- e /* ... */ só são aceitos pelo psql."
               ]
@@ -179,44 +179,44 @@
         "id":  "C4-Q07",
         "q":  "Qual interpretação de BETWEEN e IN está correta?",
         "a":  [
-                  "BETWEEN 100 AND 200 inclui ambos os extremos; IN (\u0027PR\u0027,\u0027PE\u0027) testa igualdade com um dos dois valores.",
+                  "BETWEEN 100 AND 200 aceita 100, 200 e os valores entre eles; IN (\u0027PR\u0027,\u0027PE\u0027) aceita qualquer um dos dois códigos.",
                   "BETWEEN 100 AND 200 exclui ambos os extremos; IN (\u0027PR\u0027,\u0027PE\u0027) testa igualdade com um dos dois valores.",
                   "BETWEEN 100 AND 200 inclui apenas o limite inferior; IN (\u0027PR\u0027,\u0027PE\u0027) exige igualdade com os dois valores.",
-                  "BETWEEN 100 AND 200 inclui ambos os extremos; IN (\u0027PR\u0027,\u0027PE\u0027) faz uma busca por prefixos.",
-                  "BETWEEN 100 AND 200 inclui apenas o limite superior; IN (\u0027PR\u0027,\u0027PE\u0027) seleciona todos os códigos entre PE e PR."
+                  "BETWEEN 100 AND 200 exclui ambos os extremos; IN (\u0027PR\u0027,\u0027PE\u0027) exige igualdade com os dois valores.",
+                  "BETWEEN 100 AND 200 inclui os limites 100 e 200; IN (\u0027PR\u0027,\u0027PE\u0027) aceita códigos que comecem por um dos dois."
               ]
     },
     {
         "id":  "C4-Q08",
         "q":  "Considere LIKE e regex sensíveis a maiúsculas. Qual interpretação está correta?",
         "a":  [
-                  "LIKE \u0027Ana%\u0027 exige prefixo Ana; ~ \u0027^Ana\u0027 ancora no início; ~ \u0027Ana\u0027 pode encontrar o trecho em qualquer posição.",
-                  "LIKE \u0027Ana%\u0027 exige o sufixo Ana; ~ \u0027^Ana\u0027 ancora no início; ~ \u0027Ana\u0027 exige igualdade de todo o texto.",
-                  "LIKE \u0027Ana%\u0027 exige exatamente um caractere após Ana; ~ \u0027^Ana\u0027 procura Ana no final.",
+                  "LIKE \u0027Ana%\u0027 exige prefixo Ana; ~ \u0027^Ana\u0027 ancora no início; ~ \u0027Ana\u0027 acha o trecho em qualquer posição.",
+                  "LIKE \u0027Ana%\u0027 exige ao menos um caractere após Ana; ~ \u0027^Ana\u0027 ancora no fim do texto; ~ \u0027Ana\u0027 acha o trecho em qualquer posição.",
+                  "LIKE \u0027Ana%\u0027 exige ao menos um caractere após Ana; ~ \u0027^Ana\u0027 ancora no início; ~ \u0027Ana\u0027 acha o trecho em qualquer posição.",
                   "LIKE \u0027Ana%\u0027 e ~ \u0027Ana\u0027 exigem igualdade de todo o texto; apenas ~ \u0027^Ana\u0027 aceita texto adicional.",
-                  "LIKE \u0027Ana%\u0027 e ~ \u0027^Ana\u0027 ignoram maiúsculas automaticamente; ~ \u0027Ana\u0027 distingue maiúsculas."
+                  "LIKE \u0027Ana%\u0027 exige prefixo Ana; ~ \u0027^Ana\u0027 ancora no fim do texto; ~ \u0027Ana\u0027 acha o trecho em qualquer posição."
               ]
     },
     {
         "id":  "C4-Q09",
         "q":  "Qual afirmação sobre CASE, DISTINCT e upper() é correta?",
         "a":  [
-                  "CASE calcula valores condicionais; DISTINCT cidade, uf elimina pares repetidos; upper(nome) transforma o texto apresentado.",
+                  "CASE calcula valores condicionais; DISTINCT cidade, uf elimina pares repetidos; upper(nome) muda só o texto exibido.",
                   "CASE calcula valores condicionais; DISTINCT cidade, uf mantém uma linha por cidade, independentemente da UF.",
                   "CASE filtra linhas como WHERE; DISTINCT cidade, uf elimina pares repetidos; upper(nome) altera o cadastro.",
                   "CASE calcula valores condicionais; DISTINCT cidade, uf elimina pares repetidos e garante ordenação por cidade e UF.",
-                  "CASE calcula valores condicionais; DISTINCT cidade, uf elimina pares repetidos; upper(nome) renomeia a coluna armazenada."
+                  "CASE calcula valores condicionais; DISTINCT cidade, uf elimina pares repetidos; upper(nome) renomeia a coluna."
               ]
     },
     {
         "id":  "C4-Q10",
         "q":  "Qual descrição de SET, SHOW e RESET de um parâmetro de sessão está correta?",
         "a":  [
-                  "SET altera o valor na sessão; SHOW o exibe; RESET restaura o padrão aplicável, que pode diferir do valor de fábrica.",
-                  "SET altera permanentemente todos os bancos; SHOW exibe o padrão; RESET restaura o valor anterior ao último SET.",
-                  "SET altera a sessão; SHOW grava a configuração; RESET sempre restaura o valor de fábrica.",
-                  "SET altera somente a próxima consulta; SHOW exibe o valor; RESET reinicia a conexão para aplicar o padrão.",
-                  "SET altera o valor na sessão; SHOW exibe o arquivo de configuração; RESET redefine apenas o banco conectado."
+                  "SET altera o valor na sessão; SHOW o exibe; RESET volta ao padrão da sessão, que pode não ser o de fábrica.",
+                  "SET altera o valor para o banco inteiro; SHOW o exibe; RESET volta ao valor anterior ao último SET.",
+                  "SET altera o valor na sessão; SHOW o exibe; RESET volta ao valor de fábrica, ignorando ajustes do banco.",
+                  "SET altera o valor só na próxima consulta; SHOW o exibe; RESET reconecta a sessão para aplicar o padrão.",
+                  "SET altera o valor na sessão; SHOW mostra o arquivo postgresql.conf; RESET reverte só o banco conectado."
               ]
     },
     {
@@ -256,11 +256,11 @@
         "id":  "C5-Q04",
         "q":  "Qual é a diferença entre GROUP BY uf e GROUP BY uf, cidade?",
         "a":  [
-                  "O primeiro forma grupos por UF; o segundo, por cada combinação de UF e cidade.",
+                  "O primeiro forma grupos por UF; o segundo, um grupo para cada combinação de UF e cidade.",
                   "Ambos formam os mesmos grupos; cidade só desempata a ordenação do resultado.",
                   "O primeiro forma grupos por UF; o segundo cria totais independentes por UF e por cidade.",
-                  "O primeiro conta as UFs; o segundo soma a quantidade de cidades ao número de UFs.",
-                  "O primeiro forma grupos por UF; o segundo mantém apenas cidades presentes em todas as UFs."
+                  "O primeiro forma grupos por UF; o segundo agrupa só por cidade, juntando cidades homônimas de UFs diferentes.",
+                  "O primeiro forma grupos por UF; o segundo forma grupos por UF e acrescenta um subtotal por cidade."
               ]
     },
     {
@@ -270,8 +270,8 @@
                   "nome não está agregado nem determinado pela chave agrupada; pode haver vários nomes no mesmo grupo.",
                   "COUNT(*) só pode ser usado quando o GROUP BY contém a chave primária da tabela.",
                   "O PostgreSQL não permite selecionar colunas de texto junto com agregações numéricas.",
-                  "GROUP BY exige ORDER BY com a mesma lista de colunas para validar o resultado.",
-                  "Toda coluna usada em GROUP BY precisa ser omitida da lista de SELECT."
+                  "nome pode ser exibido sem agregação, mas o PostgreSQL exige que ele também apareça no ORDER BY.",
+                  "nome só é aceito sem agregação quando há um índice em uf, que torna o nome único no grupo."
               ]
     },
     {
@@ -282,7 +282,7 @@
                   "WHERE filtra os grupos resultantes; HAVING filtra linhas antes da agregação.",
                   "Ambos filtram linhas antes da agregação; HAVING apenas permite aliases adicionais.",
                   "WHERE filtra linhas antes da agregação; HAVING também se aplica individualmente às linhas antes da soma.",
-                  "WHERE é obrigatório para consultas agrupadas; HAVING substitui GROUP BY quando a condição usa SUM."
+                  "WHERE filtra linhas antes da agregação; HAVING filtra grupos, mas só aceita colunas que estão no SELECT."
               ]
     },
     {
@@ -301,9 +301,9 @@
         "q":  "Como GROUP BY uf trata várias linhas em que uf é NULL?",
         "a":  [
                   "Reúne essas linhas em um grupo, sem tornar NULL = NULL verdadeiro nas comparações comuns.",
-                  "Cria um grupo separado para cada linha, pois NULL nunca pode participar de um agrupamento.",
+                  "Cria um grupo para cada linha nula, pois NULL = NULL é desconhecido e as linhas não se igualam.",
                   "Exclui essas linhas antes de calcular os agregados, como ocorre com COUNT(uf).",
-                  "Substitui cada NULL por texto vazio antes de agrupar e modifica a coluna armazenada.",
+                  "Reúne essas linhas em um grupo junto com as UFs de texto vazio, pois ambas representam ausência.",
                   "Reúne essas linhas em um grupo porque a expressão NULL = NULL passa a ser verdadeira."
               ]
     },
@@ -322,11 +322,11 @@
         "id":  "C5-Q10",
         "q":  "Você pretende excluir somente pedidos cancelados. Qual conferência corresponde diretamente à operação planejada?",
         "a":  [
-                  "Consultar as linhas e COUNT(*) com WHERE status = \u0027cancelado\u0027 antes de usar o mesmo filtro no DELETE.",
+                  "Consultar as linhas e o COUNT(*) com WHERE status = \u0027cancelado\u0027 e usar o mesmo filtro no DELETE.",
                   "Contar todos os pedidos e usar esse número como garantia de que o filtro do DELETE está correto.",
                   "Consultar somente os pedidos pagos e excluir os cancelados com base no resultado dessa consulta.",
                   "Consultar DISTINCT status para descobrir quantos pedidos serão removidos de cada status.",
-                  "Consultar MAX(id) dos cancelados, pois o maior id equivale à quantidade de linhas afetadas."
+                  "Consultar os cancelados com LIMIT 10 e, se estiverem certos, executar o DELETE com esse filtro."
               ]
     },
     {
@@ -334,10 +334,10 @@
         "q":  "Qual benefício decorre de separar clientes, pedidos, produtos e itens?",
         "a":  [
                   "Reduzir a repetição de dados das entidades e evitar inconsistências ao atualizar cadastros.",
-                  "Garantir que qualquer consulta use um índice, mesmo quando nenhuma chave foi indexada.",
-                  "Eliminar a necessidade de condições de ligação entre tabelas nas consultas.",
-                  "Impedir por definição que um cliente faça mais de um pedido.",
-                  "Garantir que os valores históricos dos itens acompanhem automaticamente o preço atual."
+                  "Tornar toda consulta mais rápida, pois tabelas separadas são lidas com menos trabalho que uma só.",
+                  "Dispensar as condições de ligação, pois as FKs indicam ao banco como juntar as tabelas.",
+                  "Permitir guardar o endereço do cliente em cada pedido, mantendo uma cópia completa por venda.",
+                  "Fazer o preço de cada item acompanhar o cadastro do produto, mantendo os totais sempre atualizados."
               ]
     },
     {
@@ -348,7 +348,7 @@
                   "Selecionar id, pois a primeira tabela no FROM sempre tem preferência.",
                   "Selecionar \u0027p.id\u0027, pois aspas simples resolvem a origem da coluna.",
                   "Selecionar c.id, pois a FK torna o id do cliente igual ao id do pedido.",
-                  "Selecionar DISTINCT id, pois DISTINCT resolve nomes de colunas repetidos."
+                  "Selecionar id AS pedido_id, pois o alias indica de qual tabela a coluna deve vir."
               ]
     },
     {
@@ -366,11 +366,11 @@
         "id":  "C6-Q04",
         "q":  "Uma cliente possui três pedidos. Em INNER JOIN entre clientes e pedidos pela FK, sem outros filtros, quantas vezes os dados dessa cliente aparecem?",
         "a":  [
-                  "Três vezes, uma para cada pedido correspondente.",
-                  "Uma vez, pois a chave primária de clientes elimina repetições no resultado.",
-                  "Duas vezes, porque a primeira correspondência é usada somente para validar a FK.",
-                  "Quatro vezes, incluindo uma linha adicional com os dados da cliente sem pedido.",
-                  "Nenhuma, pois INNER JOIN só admite relações um-para-um."
+                  "Três: a junção gera uma linha por pedido correspondente, repetindo os dados dela em cada uma.",
+                  "Uma vez, pois a PK de clientes impede que a mesma cliente se repita no resultado.",
+                  "Uma vez, com os três pedidos reunidos na mesma linha do resultado.",
+                  "Quatro vezes: uma para a cliente e mais uma para cada pedido correspondente.",
+                  "Três vezes, mas só se pedidos tiver índice em cliente_id; sem ele, uma vez."
               ]
     },
     {
@@ -388,22 +388,22 @@
         "id":  "C6-Q06",
         "q":  "Qual critério é adequado para escolher uma chave de ligação de clientes?",
         "a":  [
-                  "Usar um identificador único e estável; um código curto também pode servir se tiver essas garantias.",
-                  "Usar sempre nome, pois campos legíveis impedem homônimos e dispensam unicidade.",
+                  "Usar um identificador único e estável; um código curto do domínio serve se tiver essas garantias.",
+                  "Usar nome e cidade juntos, pois a combinação de dois campos legíveis evita homônimos.",
                   "Usar a posição da linha na tabela, pois ela permanece fixa após UPDATE e VACUUM.",
-                  "Usar sempre um inteiro, mesmo quando o domínio já possui um código único e estável adequado.",
-                  "Usar cidade, pois clientes da mesma região podem compartilhar a mesma identificação."
+                  "Usar um inteiro sequencial, nunca um código do domínio, mesmo que ele seja único e estável.",
+                  "Usar o nome comercial atual e atualizar as tabelas que o referenciam a cada mudança de nome."
               ]
     },
     {
         "id":  "C6-Q07",
         "q":  "Para encontrar pares de clientes da mesma cidade usando self-join, qual abordagem está correta?",
         "a":  [
-                  "Usar clientes duas vezes com aliases distintos, ligando cidade e UF e usando a.id \u003c b.id para evitar pares repetidos e consigo mesmo.",
-                  "Usar clientes uma vez e GROUP BY cidade; isso retorna automaticamente todos os pares de pessoas.",
-                  "Usar dois aliases e a.id \u003c\u003e b.id; essa condição por si só evita os pares nas duas ordens.",
-                  "Usar dois aliases e a.id = b.id; isso encontra pessoas diferentes que vivem na mesma cidade.",
-                  "Usar dois aliases sem ON; o PostgreSQL deduz a igualdade de cidade pelo tipo das colunas."
+                  "Usar clientes duas vezes com aliases, ligar cidade e UF e exigir a.id \u003c b.id para cada par sair uma vez.",
+                  "Usar clientes uma vez com GROUP BY cidade, uf e listar os nomes de cada grupo como os pares procurados.",
+                  "Usar clientes duas vezes com aliases, ligar cidade e UF e exigir a.id \u003c\u003e b.id para não repetir pares.",
+                  "Usar clientes duas vezes com aliases e ligar a.id = b.id, comparando cidade e UF na lista do SELECT.",
+                  "Usar clientes duas vezes com aliases, ligar só a cidade e exigir a.id \u003c b.id, pois a UF não muda o par."
               ]
     },
     {
@@ -412,8 +412,8 @@
         "a":  [
                   "p.preco \u003c ref.preco, com ref.id filtrado para o produto de referência.",
                   "p.id = ref.id, com ref.id filtrado para o produto de referência.",
-                  "p.preco = ref.preco, ordenando por p.preco de forma crescente.",
-                  "p.id \u003c\u003e ref.id, pois todo produto diferente tem preço inferior ao da referência.",
+                  "p.preco \u003c= ref.preco, com ref.id filtrado para o produto de referência.",
+                  "p.preco \u003c ref.id, comparando o preço ao identificador do produto de referência.",
                   "p.preco \u003e= ref.preco, ordenando o resultado de forma decrescente."
               ]
     },
@@ -421,11 +421,11 @@
         "id":  "C6-Q09",
         "q":  "Como modelar um pedido com vários produtos, preservando os dados comuns do cabeçalho?",
         "a":  [
-                  "Criar itens com pedido_id, produto_id, quantidade e preço de venda; cada linha representa um produto no pedido.",
-                  "Adicionar produto1_id, produto2_id e produto3_id em pedidos e reservar esse limite para todos os pedidos.",
+                  "Criar itens com pedido_id, produto_id, quantidade e preço de venda, uma linha por produto do pedido.",
+                  "Adicionar produto1_id, produto2_id e produto3_id em pedidos, deixando nulas as posições não usadas.",
                   "Repetir o cabeçalho em pedidos com o mesmo id para cada produto, mantendo esse id como PK simples.",
                   "Armazenar os produtos em texto separado por vírgulas em pedidos e usar uma FK sobre o texto inteiro.",
-                  "Mover cliente_id para produtos, de modo que cada produto só possa pertencer a um cliente."
+                  "Criar em produtos uma coluna pedido_id, ligando cada produto ao pedido em que foi vendido."
               ]
     },
     {
@@ -436,18 +436,18 @@
                   "A PK identifica a linha; a FK escreve automaticamente o JOIN; o preço no item preserva o histórico.",
                   "A PK identifica a linha; a FK valida referências; o JOIN continua explícito; o preço atual do cadastro preserva automaticamente o histórico.",
                   "A PK identifica a linha; a FK exige um índice no lado que referencia para existir; o preço no item preserva o histórico.",
-                  "A PK identifica a linha; a FK copia os dados da tabela pai para cada item; o JOIN consulta essas cópias históricas."
+                  "A PK identifica a linha; a FK valida referências e escreve o JOIN; o preço da venda no item preserva o histórico."
               ]
     },
     {
         "id":  "C11-Q01",
         "q":  "Qual avaliação dos benefícios e custos de um índice é adequada?",
         "a":  [
-                  "Pode reduzir o trabalho de buscas seletivas, mas ocupa espaço e acrescenta manutenção às escritas que afetam suas entradas.",
-                  "Reduz o trabalho de toda consulta e o espaço da tabela, mas aumenta somente o custo de SELECT.",
-                  "Acelera buscas seletivas e elimina a necessidade de estatísticas atualizadas para o planejador.",
-                  "Ocupa espaço apenas durante sua criação; depois substitui fisicamente a coluna indexada.",
-                  "Acelera consultas e escritas na mesma proporção, pois INSERT e UPDATE não precisam mantê-lo."
+                  "Pode reduzir o trabalho de buscas seletivas, mas ocupa espaço e adiciona manutenção às escritas afetadas.",
+                  "Reduz o trabalho de buscas seletivas e não pesa nas escritas, pois o índice é atualizado só pelo VACUUM.",
+                  "Pode reduzir buscas seletivas, mas só ocupa espaço durante a criação; depois as entradas ficam na própria tabela.",
+                  "Reduz o trabalho de buscas seletivas e dispensa estatísticas atualizadas, pois o índice já informa a distribuição.",
+                  "Pode acelerar leituras e escritas na mesma medida, pois o UPDATE localiza a linha pelo índice e não precisa mantê-lo."
               ]
     },
     {
@@ -455,98 +455,98 @@
         "q":  "Uma consulta retorna grande parte de uma tabela que possui índice. Por que o planejador pode escolher Seq Scan?",
         "a":  [
                   "Ler a tabela sequencialmente pode custar menos que percorrer o índice e buscar muitas páginas da tabela.",
-                  "A presença de Seq Scan demonstra que o índice foi corrompido e precisa de REINDEX.",
-                  "O PostgreSQL só usa índices quando a consulta retorna exatamente uma linha.",
-                  "Índices são usados apenas em JOIN, nunca em filtros WHERE de uma única tabela.",
-                  "É necessário executar CLUSTER após cada INSERT para que qualquer índice possa ser utilizado."
+                  "O índice ainda não tem estatísticas próprias; até o próximo ANALYZE o planejador ignora índices recém-criados.",
+                  "O planejador prefere índices só quando a consulta usa ORDER BY; em filtros amplos sem ordenação, o índice fica de lado.",
+                  "Seq Scan indica que o índice ficou inválido após as escritas e precisa de REINDEX antes de voltar a ser usado.",
+                  "Como a consulta precisa buscar muitas colunas, o índice não pode ser usado, pois guarda só a coluna indexada."
               ]
     },
     {
         "id":  "C11-Q03",
         "q":  "No PostgreSQL moderno, qual afirmação sobre o B-tree (cliente_id, data_evento) é correta?",
         "a":  [
-                  "Igualdade em cliente e intervalo em data costumam aproveitar essa ordem; filtros só por data também podem usá-lo conforme versão e distribuição.",
-                  "Somente filtros por data aproveitam o índice, pois a última coluna é a entrada principal da árvore.",
-                  "O índice só pode ser usado se todas as colunas aparecerem em condições de igualdade.",
-                  "Qualquer filtro só por data é incapaz de usar esse índice, independentemente da versão e da distribuição.",
-                  "A ordem das colunas não altera a eficiência de nenhum filtro, pois o B-tree reorganiza as chaves a cada consulta."
+                  "Igualdade em cliente e intervalo em data aproveitam bem essa ordem; só por data, o uso depende da versão e dos dados.",
+                  "Intervalo em cliente seguido de igualdade em data aproveita melhor essa ordem, pois a última coluna da chave é a mais seletiva.",
+                  "Igualdade em cliente e intervalo em data aproveitam essa ordem; filtros só por data nunca podem usar o índice.",
+                  "O índice só ajuda quando as duas colunas aparecem em igualdade; um intervalo em data impede seu uso.",
+                  "A ordem das colunas não muda a eficiência, pois o B-tree compara as duas colunas como um único valor."
               ]
     },
     {
         "id":  "C11-Q04",
         "q":  "Sem opções adicionais, como um índice UNIQUE composto sobre (a, b) trata unicidade e NULL?",
         "a":  [
-                  "Exige unicidade da combinação não nula; permite repetir a ou b isoladamente e aceita várias chaves com NULL por padrão.",
-                  "Exige que a e b sejam únicos individualmente e rejeita qualquer NULL.",
-                  "Exige unicidade apenas de a; b serve exclusivamente para ordenar valores iguais.",
-                  "Permite duplicatas da combinação se os registros forem inseridos em transações diferentes.",
-                  "Exige unicidade da combinação e trata todos os NULL como iguais, sem necessidade de opção adicional."
+                  "Exige combinação única; a ou b podem se repetir isoladamente, e chaves com NULL podem se repetir por padrão.",
+                  "Exige combinação única; a ou b podem se repetir isoladamente, mas duas chaves com NULL na mesma posição colidem.",
+                  "Exige combinação única; a e b também não podem se repetir isoladamente, e chaves com NULL podem se repetir.",
+                  "Exige unicidade apenas de a; b entra no índice para ordenar as linhas que repetem o mesmo valor de a.",
+                  "Exige combinação única por transação; inserções da mesma chave em transações diferentes não entram em conflito."
               ]
     },
     {
         "id":  "C11-Q05",
         "q":  "Qual descrição de CLUSTER está correta?",
         "a":  [
-                  "Reorganiza a tabela segundo um índice existente, em operação pontual; não mantém novas escritas ordenadas nem substitui ORDER BY.",
-                  "Cria automaticamente um índice e mantém a organização física a cada nova escrita.",
-                  "Reorganiza somente as entradas do índice; as páginas da tabela permanecem na disposição anterior.",
-                  "Garante que todo SELECT futuro retorne na ordem do índice, mesmo sem ORDER BY.",
-                  "Coleta estatísticas sem reescrever a tabela e permite leituras e escritas sem bloqueio exclusivo."
+                  "Reorganiza a tabela uma vez segundo um índice existente; novas escritas não seguem essa ordem automaticamente.",
+                  "Reorganiza a tabela segundo um índice existente e passa a manter essa ordem nas novas escritas da tabela.",
+                  "Reorganiza a tabela segundo um índice existente e deixa garantida a ordem de apresentação, mesmo sem ORDER BY.",
+                  "Reordena só as entradas do índice escolhido; as páginas da tabela continuam na disposição anterior.",
+                  "Reorganiza a tabela segundo um índice, sem bloqueio exclusivo, como o VACUUM comum faz com o espaço livre."
               ]
     },
     {
         "id":  "C11-Q06",
         "q":  "Qual comparação entre VACUUM comum e VACUUM FULL está correta?",
         "a":  [
-                  "O comum libera espaço elegível para reutilização interna; FULL reescreve a tabela, pode devolver espaço ao SO e exige ACCESS EXCLUSIVE.",
-                  "O comum reescreve toda a tabela; FULL apenas atualiza estatísticas sem mover registros.",
-                  "Ambos devolvem todo o espaço livre ao SO, mas apenas o comum exige bloqueio exclusivo durante toda a operação.",
-                  "O comum remove versões ainda necessárias a transações; FULL preserva essas versões para uso futuro.",
-                  "O comum só limpa índices; FULL só limpa tabelas, de modo que ambos precisam ser executados sempre em sequência."
+                  "O comum libera espaço para reúso interno; o FULL reescreve a tabela, pode devolver espaço ao SO e exige ACCESS EXCLUSIVE.",
+                  "O comum devolve ao SO todo o espaço liberado; o FULL reescreve a tabela, mas o mantém para reúso interno e exige ACCESS EXCLUSIVE.",
+                  "O comum libera espaço para reúso interno; o FULL reescreve a tabela em segundo plano, sem bloqueio, permitindo escritas concorrentes.",
+                  "O comum remove até versões ainda visíveis a outras transações; o FULL espera essas transações para compactar.",
+                  "O comum limpa apenas os índices; o FULL limpa a tabela, por isso os dois devem ser executados em sequência."
               ]
     },
     {
         "id":  "C11-Q07",
         "q":  "O que diferencia ANALYZE e VACUUM, e o que VACUUM (ANALYZE) faz?",
         "a":  [
-                  "ANALYZE coleta estatísticas; VACUUM faz manutenção de versões e espaço; a forma combinada executa ambas as tarefas.",
-                  "ANALYZE limpa versões mortas; VACUUM coleta estatísticas; a forma combinada apenas coleta estatísticas.",
-                  "ANALYZE coleta estatísticas; VACUUM comum sempre reescreve e compacta integralmente a tabela; a forma combinada faz ambos.",
-                  "ANALYZE e VACUUM limpam versões mortas; só a forma combinada pode coletar estatísticas.",
-                  "ANALYZE e VACUUM são sinônimos; a opção ANALYZE apenas aumenta o detalhamento do log."
+                  "ANALYZE atualiza as estatísticas do planejador; VACUUM limpa versões mortas e libera espaço; VACUUM (ANALYZE) faz os dois.",
+                  "ANALYZE limpa versões mortas; VACUUM revisa as estimativas do planejador; VACUUM (ANALYZE) faz os dois.",
+                  "ANALYZE coleta estatísticas; VACUUM comum reescreve e compacta a tabela como o FULL; a forma combinada faz ambos.",
+                  "ANALYZE e VACUUM limpam versões mortas; só a forma combinada VACUUM (ANALYZE) coleta estatísticas.",
+                  "ANALYZE coleta estatísticas; VACUUM cuida de versões mortas e espaço; a forma combinada só aumenta o detalhamento do log."
               ]
     },
     {
         "id":  "C11-Q08",
         "q":  "Qual leitura de EXPLAIN e EXPLAIN ANALYZE é correta?",
         "a":  [
-                  "EXPLAIN mostra estimativas; ANALYZE executa e mede; cost não é milissegundo e actual rows deve ser interpretado considerando loops.",
-                  "EXPLAIN executa sem medir; ANALYZE só estima; cost é o tempo exato de execução em milissegundos.",
-                  "Ambos apenas estimam; a presença de actual rows representa estatísticas históricas da última consulta.",
-                  "EXPLAIN mostra estimativas; ANALYZE executa e mede; cost é sempre igual a Execution Time convertido para segundos.",
-                  "EXPLAIN mostra estimativas; ANALYZE mede sem executar; actual rows é o número total de linhas da tabela."
+                  "EXPLAIN estima; ANALYZE executa e mede; cost não é milissegundo, e actual rows é média por loop.",
+                  "EXPLAIN estima; ANALYZE executa e mede; cost é o tempo previsto em milissegundos, comparável ao Execution Time.",
+                  "EXPLAIN estima; ANALYZE mede sem executar, usando estatísticas da última execução registrada no servidor.",
+                  "EXPLAIN executa sem medir; ANALYZE só estima; actual rows mostra o total de linhas lidas da tabela.",
+                  "EXPLAIN estima; ANALYZE executa e mede; actual rows já é o total do nó, somado em todos os loops."
               ]
     },
     {
         "id":  "C11-Q09",
         "q":  "Como comparar a busca por id antes e depois de criar um índice no laboratório?",
         "a":  [
-                  "Repetir a mesma consulta, registrar planos, buffers e tempos e considerar cache, carga e variação do ambiente.",
-                  "Medir uma execução antes e outra depois; qualquer redução prova que o índice foi a única causa.",
-                  "Comparar apenas o tamanho do arquivo, pois um índice menor garante menor tempo de execução.",
-                  "Comparar consultas com filtros diferentes para evitar que o cache favoreça a segunda execução.",
-                  "Forçar Seq Scan desativado e concluir que a escolha forçada representa a melhor opção em produção."
+                  "Repetir a mesma consulta, registrar planos, buffers e tempos e considerar cache e variação do ambiente.",
+                  "Medir uma execução antes e outra depois; a redução de tempo mostra o efeito do índice sobre a consulta.",
+                  "Comparar o tamanho do índice com o da tabela; quanto menor o índice, maior o ganho esperado.",
+                  "Usar filtros diferentes antes e depois, para que o cache da primeira execução não favoreça a segunda.",
+                  "Desativar Seq Scan na segunda medição e tomar o plano forçado como a melhor escolha para produção."
               ]
     },
     {
         "id":  "C11-Q10",
         "q":  "Qual decisão sobre índices é tecnicamente adequada?",
         "a":  [
-                  "Avaliar filtros, ordem das colunas, joins e custo de escrita; uma FK não cria automaticamente índice no lado que referencia.",
-                  "Remover todos os índices simples quando existir qualquer índice composto na tabela.",
-                  "Dispensar análise das FKs, pois cada FK cria automaticamente um índice nas colunas que referenciam.",
-                  "Criar um índice por coluna, pois o custo total das escritas independe do número de índices.",
-                  "Manter apenas índices de PK, pois índices adicionais não podem ajudar consultas com JOIN."
+                  "Medir consultas, ordem das colunas e custo de escrita, lembrando que a FK não indexa o lado que referencia.",
+                  "Avaliar filtros e joins; um composto (a, b) atende filtros só por b tão bem quanto um índice simples em b.",
+                  "Avaliar filtros e escritas; as FKs já têm índice nas colunas que referenciam, criado junto com a restrição.",
+                  "Criar um índice por coluna filtrada, pois o custo das escritas não cresce com o número de índices.",
+                  "Manter só os índices de PK, pois o planejador usa índices adicionais apenas em consultas sem JOIN."
               ]
     }
 ]

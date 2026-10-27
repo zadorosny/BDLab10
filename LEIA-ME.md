@@ -7,7 +7,7 @@ O DBeaver fica no Windows e envia os comandos SQL ao PostgreSQL instalado na VM 
 
 ## 1. Organize os arquivos
 
-Abra Questionario_Multipla_Escolha.html no navegador: são 100 questões, 20 por capítulo, e 40 tarefas práticas. Abra também PG_BruceMomjian.pdf, na pasta acima. Crie uma pasta pessoal de entregas, com um arquivo de respostas e um arquivo SQL por capítulo, por exemplo capitulo_03_respostas.md e capitulo_03_pratica.sql. Preserve os arquivos originais de preparação e soluções.
+Abra Questionario_Multipla_Escolha.html no navegador: são 100 questões, 20 por capítulo, e 40 tarefas práticas. Abra também sua cópia de `PG_BruceMomjian.pdf`, que deve ficar na pasta principal do repositório (o livro não é distribuído aqui). Crie uma pasta pessoal de entregas, com um arquivo de respostas e um arquivo SQL por capítulo, por exemplo capitulo_03_respostas.md e capitulo_03_pratica.sql. Preserve os arquivos originais de preparação e soluções.
 
 ## 2. Ligue a VM e confira a conexão
 
@@ -81,6 +81,8 @@ Execute cada VACUUM isoladamente, com Auto-commit ativo, sem BEGIN e sem transa�
 ## 9. Corrija depois de tentar
 
 Para a teoria, use Corrigir capítulo no próprio HTML. Para a prática, abra 03_Solucoes_Laboratorios.sql e leia somente o bloco correspondente à tarefa, como L5.3. Não execute esse arquivo inteiro: ele cria objetos, altera dados e depende da ordem das atividades. Compare SQL, resultados e comentários; explique os erros e refaça apenas o necessário, verificando antes o que já foi executado.
+
+Para conferir a carga e os resultados esperados das soluções, execute `08_Conferencias.sql`, que só faz leituras. A primeira consulta vale depois de `00_preparacao.sql`; a segunda, somente depois de `02_Lab11_Preparacao.sql` e antes de L11.6. Todas as linhas devem mostrar confere = true.
 
 04_Gabarito_Questionario.md e Gabarito_Questionario.html atendem às 50 questões discursivas da versão original. Para as 100 questões de múltipla escolha, a correção completa está no próprio Questionario_Multipla_Escolha.html.
 

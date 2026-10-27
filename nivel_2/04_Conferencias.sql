@@ -23,6 +23,29 @@ WITH recebido AS (
  UNION ALL SELECT 'estoque A',saldo,10 FROM estoques WHERE produto_id=1 AND deposito='A'
  UNION ALL SELECT 'estoque B',saldo,5 FROM estoques WHERE produto_id=1 AND deposito='B'
  UNION ALL SELECT 'preco Mouse',preco,50 FROM produtos WHERE id=1
+ -- Resultados esperados citados nos exercícios; mudam se a carga mudar.
+ UNION ALL SELECT 'N2-2.2 desconto desconhecido',COUNT(*),3 FROM pedidos WHERE desconto IS NULL
+ UNION ALL SELECT 'N2-2.2 desconto zero',COUNT(*),6 FROM pedidos WHERE desconto=0
+ UNION ALL SELECT 'N2-2.2 desconto positivo',COUNT(*),3 FROM pedidos WHERE desconto>0
+ UNION ALL SELECT 'N2-2.2 soma de descontos',SUM(desconto),40 FROM pedidos
+ UNION ALL SELECT 'N2-2.3 acessos de março',COUNT(*),2 FROM acessos
+  WHERE ocorrido_em >= TIMESTAMP '2026-03-01 00:00' AT TIME ZONE 'America/Sao_Paulo'
+    AND ocorrido_em < TIMESTAMP '2026-04-01 00:00' AT TIME ZONE 'America/Sao_Paulo'
+ UNION ALL SELECT 'N2-2.4 faixa baixo',COUNT(*),2 FROM produtos WHERE preco<100
+ UNION ALL SELECT 'N2-2.4 faixa medio',COUNT(*),3 FROM produtos WHERE preco>=100 AND preco<=500
+ UNION ALL SELECT 'N2-2.4 faixa alto',COUNT(*),1 FROM produtos WHERE preco>500
+ UNION ALL SELECT 'N2-3.1 janeiro',SUM(valor_total-COALESCE(desconto,0)),1290 FROM pedidos
+  WHERE status<>'cancelado' AND date_trunc('month',data_pedido)=DATE '2026-01-01'
+ UNION ALL SELECT 'N2-3.1 fevereiro',SUM(valor_total-COALESCE(desconto,0)),980 FROM pedidos
+  WHERE status<>'cancelado' AND date_trunc('month',data_pedido)=DATE '2026-02-01'
+ UNION ALL SELECT 'N2-3.1 março',SUM(valor_total-COALESCE(desconto,0)),540 FROM pedidos
+  WHERE status<>'cancelado' AND date_trunc('month',data_pedido)=DATE '2026-03-01'
+ UNION ALL SELECT 'N2-3.1 abril',SUM(valor_total-COALESCE(desconto,0)),250 FROM pedidos
+  WHERE status<>'cancelado' AND date_trunc('month',data_pedido)=DATE '2026-04-01'
+ UNION ALL SELECT 'N2-4.1 clientes sem venda',COUNT(*),2 FROM clientes c
+  WHERE NOT EXISTS (SELECT 1 FROM pedidos p WHERE p.cliente_id=c.id AND p.status<>'cancelado')
+ UNION ALL SELECT 'N2-4.2 NOT IN com NULL',COUNT(*),0 FROM clientes
+  WHERE id NOT IN (SELECT x FROM (VALUES (2),(NULL::integer)) AS lista(x))
 )
 SELECT *,obtido IS NOT DISTINCT FROM esperado AS confere FROM checks ORDER BY verificacao;
 -- Todos os resultados devem apresentar confere=true.

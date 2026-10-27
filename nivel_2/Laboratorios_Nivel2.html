@@ -5,9 +5,9 @@
 :root{color-scheme:dark;background:#0d1117;color:#e6edf3}*{box-sizing:border-box}body{font:16px/1.7 "Segoe UI",Arial,sans-serif;max-width:1100px;margin:0 auto;padding:28px}a{color:#8dcaff}a:focus-visible,summary:focus-visible{outline:3px solid #8dcaff;outline-offset:4px}nav{padding:18px;border:1px solid #364456;border-radius:10px;background:#182230;display:flex;flex-wrap:wrap;gap:12px 20px}h1{font-size:2rem}h1,h2,h3{color:#a6d5ff;line-height:1.35}h2{margin-top:2.5em;border-top:1px solid #364456;padding-top:24px}h3{margin-top:2em;scroll-margin-top:20px}p,li{max-width:95ch}li{margin:10px 0}code{font-family:Consolas,monospace;background:#203149;padding:2px 4px;border-radius:3px}pre{background:#161f2b;border:1px solid #364456;padding:18px;overflow:auto;font-size:14px;line-height:1.6}pre code{padding:0;background:transparent}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #364456;padding:10px;text-align:left}th{background:#203149}details{margin:16px 0;border:1px solid #364456;border-radius:8px;padding:14px}summary{cursor:pointer;color:#a6d5ff;font-weight:600}.intro{padding:16px;border-left:4px solid #8dcaff;background:#182230}footer{margin-top:40px;color:#b4c0cf}@media(max-width:600px){body{padding:16px}h1{font-size:1.6rem}}@media print{:root{color-scheme:light;background:white;color:black}body{max-width:none;padding:0;font-size:10pt}nav{display:none}h1,h2,h3,a,summary{color:#163b59}h2,h3{break-after:avoid}pre,code,th,.intro{background:#f0f3f6;color:black}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{break-inside:avoid}a{overflow-wrap:anywhere}@page{size:A4;margin:18mm}}
 </style></head><body>
 <nav aria-label="Navegação dos laboratórios"><a href="#N2-1">1 · Transações</a><a href="#N2-2">2 · Filtros</a><a href="#N2-3">3 · Relatórios</a><a href="#N2-4">4 · Junções</a><a href="#N2-5">5 · Desempenho</a><a href="#solucoes">Soluções</a><a href="extra_regex_posix/Laboratorio_Regex_POSIX.html">Extra · Regex POSIX</a><a href="../Questionario_Multipla_Escolha.html">Nível 1</a></nav>
-<p class="intro">Trilha prática · 5 laboratórios · 30 desafios · DBeaver no Windows + PostgreSQL na VM. Esta página funciona offline após baixar e extrair o repositório. Salve SQL e evidências em arquivos próprios; esta página não executa SQL nem salva progresso. As soluções ficam recolhidas no final.</p>
 <main>
 <h1>PostgreSQL — Laborat&#243;rios de n&#237;vel 2</h1>
+<p class="intro">Trilha prática · 5 laboratórios · 30 desafios · DBeaver no Windows + PostgreSQL na VM. Esta página funciona offline após baixar e extrair o repositório. Salve SQL e evidências em arquivos próprios; esta página não executa SQL nem salva progresso. Em cada exercício, passo a passo, dica, conferência e solução começam recolhidos; as soluções também estão reunidas no final.</p>
 <p>Os laborat&#243;rios existentes no BDLab10 passam a ser a trilha de <strong>n&#237;vel 1</strong>. Esta trilha acrescenta <strong>cinco laborat&#243;rios e 30 desafios</strong>, com problemas de integridade, regras de neg&#243;cio, relat&#243;rios e investiga&#231;&#227;o de desempenho. Mant&#233;m a progress&#227;o dos temas dos cap&#237;tulos 3, 4, 5, 6 e 11, mas introduz recursos al&#233;m desse recorte do livro: transa&#231;&#245;es, CTEs, fun&#231;&#245;es de janela, subconsultas, outer joins e estat&#237;sticas estendidas. N&#227;o s&#227;o exerc&#237;cios transcritos do livro.</p>
 <h2>Como come&#231;ar no Windows e no DBeaver</h2>
 <ol>
@@ -83,8 +83,7 @@
 </tbody></table></div>
 <p>As liga&#231;&#245;es principais s&#227;o: pedidos.cliente_id → clientes.id; itens.pedido_id → pedidos.id; itens.produto_id → produtos.id; pagamentos.pedido_id → pedidos.id. Assim, um pedido pode aparecer em v&#225;rias linhas de itens e tamb&#233;m em v&#225;rias linhas de pagamentos. Essa diferen&#231;a de quantidade &#233; importante para os relat&#243;rios.</p>
 <p>Antes de come&#231;ar, fa&#231;a uma visita aos dados no DBeaver. Execute cada SELECT e observe os nomes das colunas e os exemplos. Esses comandos s&#227;o somente leitura:</p>
-<pre><code>
-SET search_path TO bdadosql_n2, public;
+<pre><code>SET search_path TO bdadosql_n2, public;
 SELECT * FROM clientes ORDER BY id;
 SELECT * FROM pedidos WHERE id IN (101,104,112) ORDER BY id;
 SELECT * FROM itens WHERE pedido_id = 101 ORDER BY produto_id;
@@ -170,8 +169,7 @@ SELECT * FROM importacao_contatos ORDER BY lote_id;
 </tr>
 </tbody></table></div>
 <p>Por exemplo, antes de escrever uma consulta grande de importa&#231;&#227;o, experimente uma CTE pequena. Voc&#234; pode executar o trecho abaixo sem modificar tabelas:</p>
-<pre><code>
-WITH nomes_limpos AS (
+<pre><code>WITH nomes_limpos AS (
     SELECT btrim(nome) AS nome
     FROM (VALUES (&#39;  Joana  &#39;), (&#39;Rui &#39;)) AS exemplo(nome)
 )
@@ -1308,4 +1306,6 @@ VACUUM (VERBOSE, ANALYZE) bdadosql_n2.eventos_fisicos;
 -- VACUUM FULL bdadosql_n2.eventos_fisicos;
 -- ANALYZE bdadosql_n2.eventos_fisicos;
 -- Repita a consulta de tamanhos; n&#227;o confunda este estado com a linha de base.</code></pre></details>
-</main><footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer></body></html>
+</main><footer>BDLab10 · Nível 2 · Fonte editável: 01_Laboratorios_Nivel2.md · Veja VALIDACAO.md para os checks realizados.</footer>
+<script src="../copiar_codigo.js"></script>
+</body></html>
